@@ -1,5 +1,7 @@
 import { DB } from '../db.js';
-import { money, km, fmtDate, TYPE_ICONS } from '../utils.js';
+import { money, km, fmtDate, TYPE_ICONS, toast } from '../utils.js';
+import { auth, signOut } from '../firebase.js';
+import { hasLegacyData, migrateLegacyData } from '../migrate.js';
 
 function computeCurrentOdometer(records, vehicle) {
   const readings = records.map((r) => r.odometer).filter((v) => typeof v === 'number');
@@ -29,6 +31,18 @@ function lastFuelConsumption(fuelRecords) {
 export async function renderDashboard(container) {
   const [vehicle, records] = await Promise.all([DB.getVehicle(), DB.getAllRecords()]);
 
+  let legacy = null;
+  if (records.length === 0 && !localStorage.getItem('vanlog_migrated')) {
+    legacy = await hasLegacyData();
+    if (!legacy) localStorage.setItem('vanlog_migrated', '1');
+  }
+  const migrationBanner = legacy ? `
+    <div class="banner">
+      <p>Des données ont été trouvées sur cet appareil, enregistrées avant la synchronisation entre appareils.</p>
+      <button id="btn-migrate" class="btn-primary">Importer mes données locales</button>
+    </div>
+  ` : '';
+
   const currentOdometer = computeCurrentOdometer(records, vehicle);
   const distanceTraveled = vehicle && typeof vehicle.purchaseOdometer === 'number' && currentOdometer !== null
     ? currentOdometer - vehicle.purchaseOdometer
@@ -51,8 +65,13 @@ export async function renderDashboard(container) {
   container.innerHTML = `
     <div class="view-header">
       <h1>${vehicle && vehicle.nickname ? escapeName(vehicle.nickname) : 'Ma van'}</h1>
-      <button class="icon-btn" id="btn-settings" title="Profil du véhicule">⚙️</button>
+      <div class="header-actions">
+        <button class="icon-btn" id="btn-settings" title="Profil du véhicule">⚙️</button>
+        <button class="icon-btn" id="btn-signout" title="Déconnexion">🚪</button>
+      </div>
     </div>
+
+    ${migrationBanner}
 
     <div class="stat-grid">
       <div class="stat-card">
@@ -91,6 +110,19 @@ export async function renderDashboard(container) {
     const { openVehicleModal } = await import('./vehicle.js');
     openVehicleModal(() => renderDashboard(container));
   });
+
+  document.getElementById('btn-signout').addEventListener('click', () => signOut(auth));
+
+  if (legacy) {
+    document.getElementById('btn-migrate').addEventListener('click', async (e) => {
+      e.target.disabled = true;
+      e.target.textContent = 'Importation…';
+      const count = await migrateLegacyData(DB);
+      localStorage.setItem('vanlog_migrated', '1');
+      toast(`${count} entrée(s) importée(s)`);
+      renderDashboard(container);
+    });
+  }
 }
 
 function escapeName(s) {

@@ -1,0 +1,12 @@
+// À coller dans la console Firebase : Firestore Database → Rules → Publish.
+// Chaque utilisateur ne peut lire/écrire que ses propres données, sous
+// /users/{son-uid}/ — personne d'autre, même connecté, ne peut y accéder.
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'carnet-van-v1';
+const CACHE_NAME = 'carnet-van-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -6,6 +6,8 @@ const ASSETS = [
   './css/style.css',
   './js/app.js',
   './js/db.js',
+  './js/firebase.js',
+  './js/migrate.js',
   './js/utils.js',
   './js/views/dashboard.js',
   './js/views/odometer.js',

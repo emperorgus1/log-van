@@ -3,6 +3,7 @@ import { renderOdometer } from './views/odometer.js';
 import { renderExpenses } from './views/expenses.js';
 import { renderFuel } from './views/fuel.js';
 import { renderReports } from './views/reports.js';
+import { auth, provider, onAuthStateChanged, signInWithPopup } from './firebase.js';
 
 const routes = {
   dashboard: { render: renderDashboard, label: 'Accueil', icon: '🏠' },
@@ -40,8 +41,35 @@ window.addEventListener('hashchange', () => {
   navigate(key);
 });
 
-const initial = location.hash.replace('#', '') || 'dashboard';
-navigate(initial);
+function renderLogin() {
+  nav.innerHTML = '';
+  view.innerHTML = `
+    <div class="login-screen">
+      <div class="login-icon">🚐</div>
+      <h1>Carnet de Van</h1>
+      <p>Connecte-toi pour accéder à tes données, synchronisées entre tous tes appareils.</p>
+      <button id="btn-login" class="btn-primary">Se connecter avec Google</button>
+      <p id="login-error" class="login-error"></p>
+    </div>
+  `;
+  document.getElementById('btn-login').addEventListener('click', async () => {
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (err) {
+      document.getElementById('login-error').textContent = "La connexion a échoué — réessaie.";
+      console.error(err);
+    }
+  });
+}
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    const initial = location.hash.replace('#', '') || 'dashboard';
+    navigate(initial);
+  } else {
+    renderLogin();
+  }
+});
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
