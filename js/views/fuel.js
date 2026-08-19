@@ -1,0 +1,148 @@
+import { DB } from '../db.js';
+import { money, km, fmtDate, todayISO, openModal, closeModal, toast } from '../utils.js';
+
+export async function renderFuel(container) {
+  const records = await DB.getRecordsByType('fuel');
+  const byOdo = records.filter((r) => typeof r.odometer === 'number').sort((a, b) => a.odometer - b.odometer);
+  const withConsumption = attachConsumption(byOdo);
+  const sorted = [...withConsumption].sort((a, b) => b.date.localeCompare(a.date));
+
+  const totalCost = records.reduce((s, r) => s + (r.cost || 0), 0);
+  const totalLiters = records.reduce((s, r) => s + (r.liters || 0), 0);
+  const avgConsumption = averageConsumption(withConsumption);
+
+  container.innerHTML = `
+    <div class="view-header">
+      <h1>Essence</h1>
+      <button class="icon-btn" id="btn-add">➕</button>
+    </div>
+    <div class="stat-grid stat-grid-3">
+      <div class="stat-card">
+        <div class="stat-label">Total dépensé</div>
+        <div class="stat-value stat-value-sm">${money(totalCost)}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Litres totaux</div>
+        <div class="stat-value stat-value-sm">${totalLiters.toFixed(1)} L</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Conso. moy.</div>
+        <div class="stat-value stat-value-sm">${avgConsumption !== null ? avgConsumption.toFixed(1) + ' L/100km' : '—'}</div>
+      </div>
+    </div>
+    <div class="record-list">
+      ${sorted.length ? sorted.map(row).join('') : '<p class="empty-state">Aucun plein enregistré.</p>'}
+    </div>
+  `;
+
+  document.getElementById('btn-add').addEventListener('click', () => openForm(null, () => renderFuel(container)));
+  sorted.forEach((r) => {
+    const node = container.querySelector(`[data-id="${r.id}"]`);
+    if (node) node.addEventListener('click', () => openForm(r, () => renderFuel(container)));
+  });
+}
+
+function attachConsumption(sortedByOdo) {
+  let lastFullIdx = -1;
+  return sortedByOdo.map((r, i) => {
+    let consumption = null;
+    if (r.fullTank && lastFullIdx !== -1) {
+      const prev = sortedByOdo[lastFullIdx];
+      const distance = r.odometer - prev.odometer;
+      const between = sortedByOdo.slice(lastFullIdx + 1, i + 1);
+      const liters = between.reduce((s, x) => s + (x.liters || 0), 0);
+      if (distance > 0 && liters > 0) consumption = (liters / distance) * 100;
+    }
+    if (r.fullTank) lastFullIdx = i;
+    return { ...r, consumption };
+  });
+}
+
+function averageConsumption(withConsumption) {
+  const vals = withConsumption.map((r) => r.consumption).filter((v) => v !== null && v !== undefined);
+  if (!vals.length) return null;
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+
+function row(r) {
+  const sub = [fmtDate(r.date), typeof r.odometer === 'number' ? km(r.odometer) : null, r.liters ? r.liters.toFixed(1) + ' L' : null]
+    .filter(Boolean).join(' · ');
+  const consumptionBadge = r.consumption ? `<div class="record-badge">${r.consumption.toFixed(1)} L/100km</div>` : '';
+  return `
+    <div class="record-row" data-id="${r.id}">
+      <div class="record-icon">⛽</div>
+      <div class="record-main">
+        <div class="record-title">${r.fullTank ? 'Plein complet' : 'Plein partiel'} ${consumptionBadge}</div>
+        <div class="record-sub">${sub}</div>
+      </div>
+      <div class="record-cost">${r.cost ? money(r.cost) : ''}</div>
+    </div>
+  `;
+}
+
+function openForm(existing, onDone) {
+  const content = openModal(`
+    <div class="modal-header">
+      <h2>${existing ? 'Modifier le plein' : 'Nouveau plein'}</h2>
+      <button class="icon-btn" id="modal-close">✕</button>
+    </div>
+    <form id="fuel-form" class="form">
+      <label>Date
+        <input type="date" name="date" value="${existing?.date || todayISO()}" required />
+      </label>
+      <label>Kilométrage
+        <input type="number" name="odometer" value="${existing?.odometer ?? ''}" required />
+      </label>
+      <label>Litres
+        <input type="number" step="0.01" name="liters" value="${existing?.liters ?? ''}" required />
+      </label>
+      <label>Coût total ($)
+        <input type="number" step="0.01" name="cost" value="${existing?.cost ?? ''}" required />
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" name="fullTank" ${existing?.fullTank !== false ? 'checked' : ''} />
+        Plein complet (nécessaire pour calculer la consommation)
+      </label>
+      <label>Notes
+        <input type="text" name="notes" value="${existing?.notes || ''}" placeholder="optionnel" />
+      </label>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Enregistrer</button>
+        ${existing ? '<button type="button" id="btn-delete" class="btn-danger">Supprimer</button>' : ''}
+      </div>
+    </form>
+  `);
+
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  document.getElementById('fuel-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const record = {
+      type: 'fuel',
+      date: fd.get('date'),
+      odometer: Number(fd.get('odometer')),
+      liters: Number(fd.get('liters')),
+      cost: Number(fd.get('cost')),
+      fullTank: fd.get('fullTank') === 'on',
+      notes: fd.get('notes')?.trim() || '',
+    };
+    if (existing) {
+      record.id = existing.id;
+      await DB.updateRecord(record);
+    } else {
+      await DB.addRecord(record);
+    }
+    closeModal();
+    toast('Plein enregistré');
+    onDone();
+  });
+
+  if (existing) {
+    document.getElementById('btn-delete').addEventListener('click', async () => {
+      await DB.deleteRecord(existing.id);
+      closeModal();
+      toast('Plein supprimé');
+      onDone();
+    });
+  }
+}
