@@ -124,7 +124,7 @@ function printReport(vehicle, records, start, end, totalCost, distance) {
           <tr>
             <td>${fmtDate(r.date)}</td>
             <td>${TYPE_LABELS[r.type] || r.type}</td>
-            <td>${r.description || r.name || (r.type === 'fuel' ? (r.liters ? r.liters.toFixed(1) + ' L' : '') : '')}</td>
+            <td>${r.description || r.name || r.notes || (r.type === 'fuel' ? (r.liters ? r.liters.toFixed(1) + ' L' : '') : '')}</td>
             <td>${typeof r.odometer === 'number' ? r.odometer.toLocaleString('fr-CA') : ''}</td>
             <td>${r.cost ? money(r.cost) : ''}</td>
           </tr>
@@ -144,7 +144,7 @@ function exportCSV(records, start, end) {
   const rows = [...records].sort((a, b) => a.date.localeCompare(b.date)).map((r) => [
     r.date,
     TYPE_LABELS[r.type] || r.type,
-    r.description || r.name || '',
+    r.description || r.name || r.notes || '',
     typeof r.odometer === 'number' ? r.odometer : '',
     r.cost ?? '',
     r.liters ?? '',
