@@ -13,6 +13,7 @@ import {
   getFirestore,
   enableIndexedDbPersistence,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCDwcZd8VOUkAgjvyDRTxO3i09IYVbopy0",
@@ -28,6 +29,7 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const provider = new GoogleAuthProvider();
 export const firestore = getFirestore(app);
+export const storage = getStorage(app);
 
 enableIndexedDbPersistence(firestore).catch((err) => {
   // 'failed-precondition' : l'app est ouverte dans un autre onglet en même temps.

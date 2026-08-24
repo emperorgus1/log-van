@@ -43,6 +43,18 @@ export const DB = {
     return ref.id;
   },
 
+  // Génère un id de document côté client (sans écriture réseau), pour
+  // pouvoir uploader des pièces jointes vers le bon dossier de stockage
+  // avant même que l'entrée soit enregistrée.
+  newId() {
+    return doc(recordsCol()).id;
+  },
+
+  async setRecord(record) {
+    const { id, ...rest } = record;
+    await setDoc(doc(recordsCol(), id), rest);
+  },
+
   async updateRecord(record) {
     const { id, ...rest } = record;
     await updateDoc(doc(recordsCol(), id), rest);

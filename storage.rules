@@ -1,0 +1,16 @@
+// À coller dans la console Firebase : Storage → Rules → Publish.
+// Même principe que firestore.rules : chaque utilisateur ne peut lire/écrire
+// que ses propres fichiers, sous /users/{son-uid}/ — personne d'autre, même
+// connecté, ne peut y accéder. La limite de taille doit rester alignée avec
+// MAX_FILE_SIZE dans js/attachments.js.
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /users/{uid}/{allPaths=**} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.size < 10 * 1024 * 1024;
+    }
+  }
+}
