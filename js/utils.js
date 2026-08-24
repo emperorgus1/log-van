@@ -24,6 +24,7 @@ export const TYPE_LABELS = {
   maintenance: 'Entretien',
   part: 'Pièce achetée',
   renovation: 'Aménagement',
+  place: 'Endroit visité',
 };
 
 export const TYPE_ICONS = {
@@ -32,6 +33,7 @@ export const TYPE_ICONS = {
   maintenance: '🔧',
   part: '🧩',
   renovation: '🛠️',
+  place: '📍',
 };
 
 export function escapeHTML(str) {

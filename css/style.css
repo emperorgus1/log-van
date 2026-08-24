@@ -360,6 +360,26 @@ html, body {
 
 .checkbox-label input { width: auto; }
 
+.location-row {
+  display: flex;
+  gap: 8px;
+}
+
+.location-row input { flex: 1; min-width: 0; }
+
+.field-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.map-container {
+  height: 60vh;
+  min-height: 320px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
 .form-actions {
   display: flex;
   gap: 10px;
