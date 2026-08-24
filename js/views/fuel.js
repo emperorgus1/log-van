@@ -1,21 +1,23 @@
 import { DB } from '../db.js';
-import { money, km, fmtDate, todayISO, openModal, closeModal, toast } from '../utils.js';
+import { money, km, fmtDate, todayISO, openModal, closeModal, toast, escapeHTML } from '../utils.js';
+
+let activeTab = 'fuel';
 
 export async function renderFuel(container) {
-  const records = await DB.getRecordsByType('fuel');
+  const all = await DB.getAllRecords();
+  const records = all.filter((r) => r.type === 'fuel');
+  const odoRecords = all.filter((r) => r.type === 'odometer');
+
   const byOdo = records.filter((r) => typeof r.odometer === 'number').sort((a, b) => a.odometer - b.odometer);
   const withConsumption = attachConsumption(byOdo);
   const sorted = [...withConsumption].sort((a, b) => b.date.localeCompare(a.date));
+  const sortedOdo = [...odoRecords].sort((a, b) => b.date.localeCompare(a.date));
 
   const totalCost = records.reduce((s, r) => s + (r.cost || 0), 0);
   const totalLiters = records.reduce((s, r) => s + (r.liters || 0), 0);
   const avgConsumption = averageConsumption(withConsumption);
 
-  container.innerHTML = `
-    <div class="view-header">
-      <h1>Essence</h1>
-      <button class="icon-btn" id="btn-add">➕</button>
-    </div>
+  const fuelSection = `
     <div class="stat-grid stat-grid-3">
       <div class="stat-card">
         <div class="stat-label">Total dépensé</div>
@@ -35,11 +37,47 @@ export async function renderFuel(container) {
     </div>
   `;
 
+  const odoSection = `
+    <div class="record-list">
+      ${sortedOdo.length ? sortedOdo.map(odoRow).join('') : '<p class="empty-state">Aucun relevé de kilométrage.</p>'}
+    </div>
+  `;
+
+  container.innerHTML = `
+    <div class="view-header">
+      <h1>Essence</h1>
+      <div class="header-actions">
+        <button class="icon-btn" id="btn-add-odo" title="Ajouter un relevé de kilométrage">🧭</button>
+        <button class="icon-btn" id="btn-add">➕</button>
+      </div>
+    </div>
+    <div class="chip-row">
+      <button class="chip${activeTab === 'fuel' ? ' active' : ''}" data-tab="fuel">Pleins</button>
+      <button class="chip${activeTab === 'odometer' ? ' active' : ''}" data-tab="odometer">Relevés kilométriques</button>
+    </div>
+    ${activeTab === 'fuel' ? fuelSection : odoSection}
+  `;
+
   document.getElementById('btn-add').addEventListener('click', () => openForm(null, () => renderFuel(container)));
-  sorted.forEach((r) => {
-    const node = container.querySelector(`[data-id="${r.id}"]`);
-    if (node) node.addEventListener('click', () => openForm(r, () => renderFuel(container)));
+  document.getElementById('btn-add-odo').addEventListener('click', () => openOdometerForm(null, () => renderFuel(container)));
+  container.querySelectorAll('.chip').forEach((c) => {
+    c.addEventListener('click', () => {
+      activeTab = c.dataset.tab;
+      renderFuel(container);
+    });
   });
+
+  if (activeTab === 'fuel') {
+    sorted.forEach((r) => {
+      const node = container.querySelector(`[data-id="${r.id}"]`);
+      if (node) node.addEventListener('click', () => openForm(r, () => renderFuel(container)));
+    });
+  } else {
+    sortedOdo.forEach((r) => {
+      const node = container.querySelector(`[data-id="${r.id}"]`);
+      if (node) node.addEventListener('click', () => openOdometerForm(r, () => renderFuel(container)));
+    });
+  }
 }
 
 function attachConsumption(sortedByOdo) {
@@ -76,6 +114,18 @@ function row(r) {
         <div class="record-sub">${sub}</div>
       </div>
       <div class="record-cost">${r.cost ? money(r.cost) : ''}</div>
+    </div>
+  `;
+}
+
+function odoRow(r) {
+  return `
+    <div class="record-row" data-id="${r.id}">
+      <div class="record-icon">🧭</div>
+      <div class="record-main">
+        <div class="record-title">${km(r.odometer)}</div>
+        <div class="record-sub">${fmtDate(r.date)}${r.notes ? ' · ' + escapeHTML(r.notes) : ''}</div>
+      </div>
     </div>
   `;
 }
@@ -142,6 +192,63 @@ function openForm(existing, onDone) {
       await DB.deleteRecord(existing.id);
       closeModal();
       toast('Plein supprimé');
+      onDone();
+    });
+  }
+}
+
+// Relevé de kilométrage autonome, non lié à un plein — même type d'entrée
+// (`odometer`) que l'ancien onglet Kilométrage, pour continuer d'alimenter
+// le kilométrage actuel du tableau de bord et la distance des rapports.
+function openOdometerForm(existing, onDone) {
+  const content = openModal(`
+    <div class="modal-header">
+      <h2>${existing ? 'Modifier le relevé' : 'Nouveau relevé de kilométrage'}</h2>
+      <button class="icon-btn" id="modal-close">✕</button>
+    </div>
+    <form id="odo-form" class="form">
+      <label>Date
+        <input type="date" name="date" value="${existing?.date || todayISO()}" required />
+      </label>
+      <label>Kilométrage
+        <input type="number" name="odometer" value="${existing?.odometer ?? ''}" required />
+      </label>
+      <label>Notes
+        <input type="text" name="notes" value="${existing ? escapeHTML(existing.notes || '') : ''}" placeholder="optionnel" />
+      </label>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Enregistrer</button>
+        ${existing ? '<button type="button" id="btn-delete" class="btn-danger">Supprimer</button>' : ''}
+      </div>
+    </form>
+  `);
+
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  document.getElementById('odo-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const record = {
+      type: 'odometer',
+      date: fd.get('date'),
+      odometer: Number(fd.get('odometer')),
+      notes: fd.get('notes')?.trim() || '',
+    };
+    if (existing) {
+      record.id = existing.id;
+      await DB.updateRecord(record);
+    } else {
+      await DB.addRecord(record);
+    }
+    closeModal();
+    toast('Relevé enregistré');
+    onDone();
+  });
+
+  if (existing) {
+    document.getElementById('btn-delete').addEventListener('click', async () => {
+      await DB.deleteRecord(existing.id);
+      closeModal();
+      toast('Relevé supprimé');
       onDone();
     });
   }
