@@ -1,4 +1,4 @@
-const CACHE_NAME = 'carnet-van-v6';
+const CACHE_NAME = 'carnet-van-v7';
 const ASSETS = [
   './',
   './index.html',
@@ -38,20 +38,20 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Réseau en premier : chaque mise à jour de l'appli est servie dès le
+// prochain chargement, sans jamais rester coincé sur une vieille version en
+// cache. Le cache ne sert que de filet de secours hors ligne.
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const fetchPromise = fetch(event.request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.ok) {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return networkResponse;
-        })
-        .catch(() => cached);
-      return cached || fetchPromise;
-    })
+    fetch(event.request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.ok) {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return networkResponse;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
