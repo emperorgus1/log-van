@@ -1,6 +1,6 @@
 import { DB } from '../db.js';
 import { fmtDate, todayISO, openModal, closeModal, toast, escapeHTML } from '../utils.js';
-import { resolveLocation, getCurrentPosition, googleMapsUrl } from '../geo.js';
+import { resolveLocation, getCurrentPosition, googleMapsUrl, drivingDistanceKm } from '../geo.js';
 
 let activeTab = 'list';
 let leafletPromise = null;
@@ -68,7 +68,8 @@ function renderList(body, sorted, onDone) {
 
 function row(r) {
   const locLabel = r.locationText ? truncate(r.locationText, 40) : (typeof r.lat === 'number' ? 'Position GPS' : null);
-  const sub = [fmtDate(r.date), locLabel].filter(Boolean).join(' · ');
+  const distanceLabel = typeof r.distanceFromHomeKm === 'number' ? `${Math.round(r.distanceFromHomeKm)} km de la maison` : null;
+  const sub = [fmtDate(r.date), locLabel, distanceLabel].filter(Boolean).join(' · ');
   const badge = typeof r.lat !== 'number' ? '<div class="record-badge">non localisé</div>' : '';
   return `
     <div class="record-row" data-id="${r.id}">
@@ -189,6 +190,18 @@ function openForm(existing, onDone) {
     const fd = new FormData(e.target);
     const locationInput = fd.get('locationText')?.trim() || '';
     const resolved = await resolveLocation(locationInput);
+
+    let distanceFromHomeKm = null;
+    if (resolved.lat != null) {
+      const vehicle = await DB.getVehicle();
+      if (vehicle && typeof vehicle.homeLat === 'number') {
+        distanceFromHomeKm = await drivingDistanceKm(
+          { lat: vehicle.homeLat, lng: vehicle.homeLng },
+          { lat: resolved.lat, lng: resolved.lng }
+        );
+      }
+    }
+
     const record = {
       type: 'place',
       name: fd.get('name')?.trim() || '',
@@ -198,6 +211,7 @@ function openForm(existing, onDone) {
       lat: resolved.lat,
       lng: resolved.lng,
       locationSource: resolved.source,
+      distanceFromHomeKm,
     };
     if (existing) {
       record.id = existing.id;

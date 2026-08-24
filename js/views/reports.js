@@ -106,6 +106,14 @@ export async function renderReports(container) {
   document.getElementById('btn-csv').addEventListener('click', () => exportCSV(filtered, start, end));
 }
 
+function descriptionFor(r) {
+  const base = r.description || r.name || r.notes || (r.type === 'fuel' ? (r.liters ? r.liters.toFixed(1) + ' L' : '') : '');
+  if (r.type === 'place' && typeof r.distanceFromHomeKm === 'number') {
+    return `${base} (${Math.round(r.distanceFromHomeKm)} km de la maison)`;
+  }
+  return base;
+}
+
 function printReport(vehicle, records, start, end, totalCost, distance) {
   const printRoot = document.getElementById('print-root');
   const vehicleName = vehicle?.nickname || [vehicle?.make, vehicle?.model].filter(Boolean).join(' ') || 'Ma van';
@@ -124,7 +132,7 @@ function printReport(vehicle, records, start, end, totalCost, distance) {
           <tr>
             <td>${fmtDate(r.date)}</td>
             <td>${TYPE_LABELS[r.type] || r.type}</td>
-            <td>${r.description || r.name || r.notes || (r.type === 'fuel' ? (r.liters ? r.liters.toFixed(1) + ' L' : '') : '')}</td>
+            <td>${descriptionFor(r)}</td>
             <td>${typeof r.odometer === 'number' ? r.odometer.toLocaleString('fr-CA') : ''}</td>
             <td>${r.cost ? money(r.cost) : ''}</td>
           </tr>
@@ -144,7 +152,7 @@ function exportCSV(records, start, end) {
   const rows = [...records].sort((a, b) => a.date.localeCompare(b.date)).map((r) => [
     r.date,
     TYPE_LABELS[r.type] || r.type,
-    r.description || r.name || r.notes || '',
+    descriptionFor(r),
     typeof r.odometer === 'number' ? r.odometer : '',
     r.cost ?? '',
     r.liters ?? '',
