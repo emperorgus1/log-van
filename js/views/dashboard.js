@@ -134,7 +134,8 @@ function escapeName(s) {
 function recordRow(r) {
   const icon = TYPE_ICONS[r.type] || '•';
   const title = r.description || r.name || labelFor(r.type);
-  const sub = [fmtDate(r.date), typeof r.odometer === 'number' ? km(r.odometer) : null].filter(Boolean).join(' · ');
+  const distanceLabel = typeof r.distanceFromHomeKm === 'number' ? `${Math.round(r.distanceFromHomeKm)} km de la maison` : null;
+  const sub = [fmtDate(r.date), typeof r.odometer === 'number' ? km(r.odometer) : null, distanceLabel].filter(Boolean).join(' · ');
   return `
     <div class="record-row">
       <div class="record-icon">${icon}</div>
