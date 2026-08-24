@@ -1,4 +1,4 @@
-const CACHE_NAME = 'carnet-van-v7';
+const CACHE_NAME = 'carnet-van-v8';
 const ASSETS = [
   './',
   './index.html',
@@ -41,10 +41,13 @@ self.addEventListener('activate', (event) => {
 // Réseau en premier : chaque mise à jour de l'appli est servie dès le
 // prochain chargement, sans jamais rester coincé sur une vieille version en
 // cache. Le cache ne sert que de filet de secours hors ligne.
+// `cache: 'no-store'` court-circuite aussi le cache HTTP normal du navigateur
+// (GitHub Pages sert nos fichiers avec max-age=600) — sans ça, le fetch
+// "réseau" pouvait quand même être satisfait par ce cache-là pendant 10 min.
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request.url, { cache: 'no-store' })
       .then((networkResponse) => {
         if (networkResponse && networkResponse.ok) {
           const clone = networkResponse.clone();
