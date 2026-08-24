@@ -79,7 +79,7 @@ export async function renderDashboard(container) {
         <div class="stat-value">${km(currentOdometer)}</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Distance parcourue</div>
+        <div class="stat-label">Distance parcourue depuis l'achat</div>
         <div class="stat-value">${distanceTraveled !== null ? km(distanceTraveled) : '—'}</div>
       </div>
       <div class="stat-card">
@@ -91,7 +91,7 @@ export async function renderDashboard(container) {
         <div class="stat-value">${consumption !== null ? consumption.toFixed(1) + ' L/100km' : '—'}</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Total essence</div>
+        <div class="stat-label">Coût total en essence</div>
         <div class="stat-value">${money(totalFuelCost)}</div>
       </div>
       <div class="stat-card">
