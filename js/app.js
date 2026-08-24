@@ -1,5 +1,4 @@
 import { renderDashboard } from './views/dashboard.js';
-import { renderOdometer } from './views/odometer.js';
 import { renderExpenses } from './views/expenses.js';
 import { renderFuel } from './views/fuel.js';
 import { renderPlaces } from './views/places.js';
@@ -8,10 +7,9 @@ import { auth, provider, onAuthStateChanged, signInWithPopup } from './firebase.
 
 const routes = {
   dashboard: { render: renderDashboard, label: 'Accueil', icon: '🏠' },
-  odometer: { render: renderOdometer, label: 'Kilométrage', icon: '🧭' },
-  expenses: { render: renderExpenses, label: 'Entretien', icon: '🔧' },
   fuel: { render: renderFuel, label: 'Essence', icon: '⛽' },
   places: { render: renderPlaces, label: 'Endroits', icon: '📍' },
+  expenses: { render: renderExpenses, label: 'Entretien', icon: '🔧' },
   reports: { render: renderReports, label: 'Rapports', icon: '📄' },
 };
 
