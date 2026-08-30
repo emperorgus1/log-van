@@ -1,5 +1,5 @@
 import { DB } from '../db.js';
-import { openModal, closeModal, toast, escapeHTML } from '../utils.js';
+import { openModal, closeModal, toast, escapeHTML, parseDecimal } from '../utils.js';
 import { resolveLocation, getCurrentPosition } from '../geo.js';
 
 export async function openVehicleModal(onSaved) {
@@ -26,10 +26,10 @@ export async function openVehicleModal(onSaved) {
         <input type="date" name="purchaseDate" value="${v.purchaseDate || ''}" />
       </label>
       <label>Kilométrage à l'achat
-        <input type="number" name="purchaseOdometer" value="${v.purchaseOdometer ?? ''}" />
+        <input type="text" inputmode="decimal" name="purchaseOdometer" value="${v.purchaseOdometer ?? ''}" />
       </label>
       <label>Prix d'achat
-        <input type="number" step="0.01" name="purchasePrice" value="${v.purchasePrice ?? ''}" />
+        <input type="text" inputmode="decimal" name="purchasePrice" value="${v.purchasePrice ?? ''}" />
       </label>
       <label>Localisation de la maison
         <div class="location-row">
@@ -72,8 +72,8 @@ export async function openVehicleModal(onSaved) {
       model: fd.get('model')?.trim() || '',
       year: fd.get('year') ? Number(fd.get('year')) : null,
       purchaseDate: fd.get('purchaseDate') || '',
-      purchaseOdometer: fd.get('purchaseOdometer') ? Number(fd.get('purchaseOdometer')) : null,
-      purchasePrice: fd.get('purchasePrice') ? Number(fd.get('purchasePrice')) : null,
+      purchaseOdometer: fd.get('purchaseOdometer') ? parseDecimal(fd.get('purchaseOdometer')) : null,
+      purchasePrice: fd.get('purchasePrice') ? parseDecimal(fd.get('purchasePrice')) : null,
       homeLocationText: resolvedHome.locationText,
       homeLat: resolvedHome.lat,
       homeLng: resolvedHome.lng,

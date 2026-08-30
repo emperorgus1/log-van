@@ -1,5 +1,5 @@
 import { DB } from '../db.js';
-import { money, km, fmtDate, todayISO, openModal, closeModal, toast, escapeHTML } from '../utils.js';
+import { money, km, fmtDate, todayISO, openModal, closeModal, toast, escapeHTML, parseDecimal } from '../utils.js';
 
 let activeTab = 'fuel';
 
@@ -141,13 +141,13 @@ function openForm(existing, onDone) {
         <input type="date" name="date" value="${existing?.date || todayISO()}" required />
       </label>
       <label>Kilométrage
-        <input type="number" name="odometer" value="${existing?.odometer ?? ''}" required />
+        <input type="text" inputmode="decimal" name="odometer" value="${existing?.odometer ?? ''}" required />
       </label>
       <label>Litres
-        <input type="number" step="0.01" name="liters" value="${existing?.liters ?? ''}" required />
+        <input type="text" inputmode="decimal" name="liters" value="${existing?.liters ?? ''}" required />
       </label>
       <label>Coût total ($)
-        <input type="number" step="0.01" name="cost" value="${existing?.cost ?? ''}" required />
+        <input type="text" inputmode="decimal" name="cost" value="${existing?.cost ?? ''}" required />
       </label>
       <label class="checkbox-label">
         <input type="checkbox" name="fullTank" ${existing?.fullTank !== false ? 'checked' : ''} />
@@ -170,9 +170,9 @@ function openForm(existing, onDone) {
     const record = {
       type: 'fuel',
       date: fd.get('date'),
-      odometer: Number(fd.get('odometer')),
-      liters: Number(fd.get('liters')),
-      cost: Number(fd.get('cost')),
+      odometer: parseDecimal(fd.get('odometer')),
+      liters: parseDecimal(fd.get('liters')),
+      cost: parseDecimal(fd.get('cost')),
       fullTank: fd.get('fullTank') === 'on',
       notes: fd.get('notes')?.trim() || '',
     };
@@ -211,7 +211,7 @@ function openOdometerForm(existing, onDone) {
         <input type="date" name="date" value="${existing?.date || todayISO()}" required />
       </label>
       <label>Kilométrage
-        <input type="number" name="odometer" value="${existing?.odometer ?? ''}" required />
+        <input type="text" inputmode="decimal" name="odometer" value="${existing?.odometer ?? ''}" required />
       </label>
       <label>Notes
         <input type="text" name="notes" value="${existing ? escapeHTML(existing.notes || '') : ''}" placeholder="optionnel" />
@@ -230,7 +230,7 @@ function openOdometerForm(existing, onDone) {
     const record = {
       type: 'odometer',
       date: fd.get('date'),
-      odometer: Number(fd.get('odometer')),
+      odometer: parseDecimal(fd.get('odometer')),
       notes: fd.get('notes')?.trim() || '',
     };
     if (existing) {

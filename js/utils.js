@@ -36,6 +36,11 @@ export const TYPE_ICONS = {
   place: '📍',
 };
 
+export function parseDecimal(str) {
+  if (str === null || str === undefined) return NaN;
+  return Number(String(str).trim().replace(',', '.'));
+}
+
 export function escapeHTML(str) {
   const div = document.createElement('div');
   div.textContent = str ?? '';

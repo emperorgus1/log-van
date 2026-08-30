@@ -1,5 +1,5 @@
 import { DB } from '../db.js';
-import { money, km, fmtDate, todayISO, TYPE_ICONS, openModal, closeModal, toast } from '../utils.js';
+import { money, km, fmtDate, todayISO, TYPE_ICONS, openModal, closeModal, toast, parseDecimal } from '../utils.js';
 import { validateFile, uploadAttachment, deleteAttachment } from '../attachments.js';
 
 const TYPES = [
@@ -102,10 +102,10 @@ function openForm(existing, onDone) {
         <input type="date" name="date" value="${existing?.date || todayISO()}" required />
       </label>
       <label>Coût ($)
-        <input type="number" step="0.01" name="cost" value="${existing?.cost ?? ''}" />
+        <input type="text" inputmode="decimal" name="cost" value="${existing?.cost ?? ''}" />
       </label>
       <label>Kilométrage
-        <input type="number" name="odometer" value="${existing?.odometer ?? ''}" placeholder="optionnel" />
+        <input type="text" inputmode="decimal" name="odometer" value="${existing?.odometer ?? ''}" placeholder="optionnel" />
       </label>
       <label>Catégorie
         <input type="text" name="category" value="${existing?.category || ''}" placeholder="ex: électricité, plomberie, moteur" />
@@ -219,8 +219,8 @@ function openForm(existing, onDone) {
       type: fd.get('type'),
       description: fd.get('description')?.trim() || '',
       date: fd.get('date'),
-      cost: fd.get('cost') ? Number(fd.get('cost')) : null,
-      odometer: fd.get('odometer') ? Number(fd.get('odometer')) : null,
+      cost: fd.get('cost') ? parseDecimal(fd.get('cost')) : null,
+      odometer: fd.get('odometer') ? parseDecimal(fd.get('odometer')) : null,
       category: fd.get('category')?.trim() || '',
       vendor: fd.get('vendor')?.trim() || '',
       notes: fd.get('notes')?.trim() || '',
