@@ -250,7 +250,7 @@ function openForm(existing, onDone) {
       onDone();
     } catch (err) {
       console.error("Enregistrement de la dépense échoué :", err);
-      await Promise.all(uploadedAttachments.map((a) => deleteAttachment(a.path));
+      await Promise.all(uploadedAttachments.map((a) => deleteAttachment(a.path)));
       toast("Impossible d'enregistrer la dépense. Réessaie.");
     } finally {
       submitBtn.disabled = false;
