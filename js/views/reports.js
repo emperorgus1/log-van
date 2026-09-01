@@ -1,5 +1,5 @@
 import { DB } from '../db.js';
-import { money, km, fmtDate, todayISO, TYPE_LABELS, downloadFile } from '../utils.js';
+import { money, km, fmtDate, todayISO, TYPE_LABELS, downloadFile, escapeHTML } from '../utils.js';
 
 const PERIODS = [
   { value: 'month', label: 'Ce mois-ci' },
@@ -120,7 +120,7 @@ function printReport(vehicle, records, start, end, totalCost, distance) {
   const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));
 
   printRoot.innerHTML = `
-    <h1>Rapport — ${vehicleName}</h1>
+    <h1>Rapport — ${escapeHTML(vehicleName)}</h1>
     <p>Période : ${fmtDate(start)} au ${fmtDate(end)}</p>
     <p><strong>Total investi :</strong> ${money(totalCost)} &nbsp; <strong>Distance parcourue :</strong> ${distance !== null ? km(distance) : '—'}</p>
     <table>
@@ -131,8 +131,8 @@ function printReport(vehicle, records, start, end, totalCost, distance) {
         ${sorted.map((r) => `
           <tr>
             <td>${fmtDate(r.date)}</td>
-            <td>${TYPE_LABELS[r.type] || r.type}</td>
-            <td>${descriptionFor(r)}</td>
+            <td>${escapeHTML(TYPE_LABELS[r.type] || r.type)}</td>
+            <td>${escapeHTML(descriptionFor(r))}</td>
             <td>${typeof r.odometer === 'number' ? r.odometer.toLocaleString('fr-CA') : ''}</td>
             <td>${r.cost ? money(r.cost) : ''}</td>
           </tr>

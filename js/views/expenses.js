@@ -1,5 +1,5 @@
 import { DB } from '../db.js';
-import { money, km, fmtDate, todayISO, TYPE_ICONS, openModal, closeModal, toast, parseDecimal } from '../utils.js';
+import { money, km, fmtDate, todayISO, TYPE_ICONS, openModal, closeModal, toast, escapeHTML, validateDateField, validateNumberField } from '../utils.js';
 import { validateFile, uploadAttachment, deleteAttachment } from '../attachments.js';
 
 const TYPES = [
@@ -56,21 +56,15 @@ function row(r) {
     .filter(Boolean).join(' · ');
   const attachBadge = r.attachments?.length ? `<div class="record-badge">📎 ${r.attachments.length}</div>` : '';
   return `
-    <div class="record-row" data-id="${r.id}">
+    <div class="record-row" data-id="${escapeHTML(r.id)}">
       <div class="record-icon">${TYPE_ICONS[r.type] || '•'}</div>
       <div class="record-main">
         <div class="record-title">${escapeHTML(r.description || label)} ${attachBadge}</div>
-        <div class="record-sub">${sub}</div>
+        <div class="record-sub">${escapeHTML(sub)}</div>
       </div>
       <div class="record-cost">${r.cost ? money(r.cost) : ''}</div>
     </div>
   `;
-}
-
-function escapeHTML(str) {
-  const div = document.createElement('div');
-  div.textContent = str ?? '';
-  return div.innerHTML;
 }
 
 function fileSize(bytes) {
@@ -96,25 +90,25 @@ function openForm(existing, onDone) {
         </select>
       </label>
       <label>Description
-        <input type="text" name="description" value="${existing?.description || ''}" placeholder="ex: Changement d'huile" required />
+        <input type="text" name="description" value="${escapeHTML(existing?.description || '')}" placeholder="ex: Changement d'huile" required />
       </label>
       <label>Date
-        <input type="date" name="date" value="${existing?.date || todayISO()}" required />
+        <input type="date" name="date" value="${escapeHTML(existing?.date || todayISO())}" required />
       </label>
       <label>Coût ($)
-        <input type="text" inputmode="decimal" name="cost" value="${existing?.cost ?? ''}" />
+        <input type="text" inputmode="decimal" name="cost" value="${escapeHTML(existing?.cost ?? '')}" />
       </label>
       <label>Kilométrage
-        <input type="text" inputmode="decimal" name="odometer" value="${existing?.odometer ?? ''}" placeholder="optionnel" />
+        <input type="text" inputmode="decimal" name="odometer" value="${escapeHTML(existing?.odometer ?? '')}" placeholder="optionnel" />
       </label>
       <label>Catégorie
-        <input type="text" name="category" value="${existing?.category || ''}" placeholder="ex: électricité, plomberie, moteur" />
+        <input type="text" name="category" value="${escapeHTML(existing?.category || '')}" placeholder="ex: électricité, plomberie, moteur" />
       </label>
       <label>Fournisseur
-        <input type="text" name="vendor" value="${existing?.vendor || ''}" placeholder="optionnel" />
+        <input type="text" name="vendor" value="${escapeHTML(existing?.vendor || '')}" placeholder="optionnel" />
       </label>
       <label>Notes
-        <textarea name="notes" placeholder="optionnel">${existing?.notes || ''}</textarea>
+        <textarea name="notes" placeholder="optionnel">${escapeHTML(existing?.notes || '')}</textarea>
       </label>
       <label>Documents (photos, PDF)
         <div id="attach-list" class="attach-list"></div>
@@ -131,8 +125,8 @@ function openForm(existing, onDone) {
     const list = content.querySelector('#attach-list');
     const existingItems = existingAttachments.map((a) => `
       <div class="attach-item" data-kind="existing" data-path="${escapeHTML(a.path)}">
-        ${a.type?.startsWith('image/') ? `<img class="attach-thumb" src="${a.url}" alt="" />` : '<div class="attach-thumb attach-thumb-file">📄</div>'}
-        <a class="attach-name" href="${a.url}" target="_blank" rel="noopener">${escapeHTML(a.name)}</a>
+        ${a.type?.startsWith('image/') ? `<img class="attach-thumb" src="${escapeHTML(safeAttachmentUrl(a.url))}" alt="" />` : '<div class="attach-thumb attach-thumb-file">📄</div>'}
+        <a class="attach-name" href="${escapeHTML(safeAttachmentUrl(a.url))}" target="_blank" rel="noopener">${escapeHTML(a.name)}</a>
         <span class="attach-size">${fileSize(a.size || 0)}</span>
         <button type="button" class="attach-remove" data-path="${escapeHTML(a.path)}">✕</button>
       </div>
@@ -189,60 +183,86 @@ function openForm(existing, onDone) {
   document.getElementById('modal-close').addEventListener('click', closeModal);
   document.getElementById('exp-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const form = e.target;
+    const dateIsValid = validateDateField(form, 'date', { label: 'La date', required: true, max: todayISO() });
+    const cost = validateNumberField(form, 'cost', { label: 'Le coût', min: 0 });
+    const odometer = validateNumberField(form, 'odometer', { label: 'Le kilométrage', min: 0 });
+    if (!dateIsValid || !cost.valid || !odometer.valid) {
+      form.reportValidity();
+      return;
+    }
+
+    const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
+    try {
+      const id = existing?.id || DB.newId();
 
-    const id = existing?.id || DB.newId();
-
-    if (pendingFiles.length) {
-      submitBtn.textContent = 'Envoi des documents…';
-      try {
+      if (pendingFiles.length) {
+        submitBtn.textContent = 'Envoi des documents…';
         for (const p of pendingFiles) {
           const uploaded = await uploadAttachment(id, p.file);
           existingAttachments.push(uploaded);
           if (p.previewUrl) URL.revokeObjectURL(p.previewUrl);
         }
-      } catch (err) {
-        console.error(err);
-        toast("Échec de l'envoi d'un document — réessaie.");
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Enregistrer';
-        return;
       }
-    }
 
-    await Promise.all(removedPaths.map((path) => deleteAttachment(path)));
+      await Promise.all(removedPaths.map((path) => deleteAttachment(path)));
 
-    const fd = new FormData(e.target);
-    const record = {
-      id,
-      type: fd.get('type'),
-      description: fd.get('description')?.trim() || '',
-      date: fd.get('date'),
-      cost: fd.get('cost') ? parseDecimal(fd.get('cost')) : null,
-      odometer: fd.get('odometer') ? parseDecimal(fd.get('odometer')) : null,
-      category: fd.get('category')?.trim() || '',
-      vendor: fd.get('vendor')?.trim() || '',
-      notes: fd.get('notes')?.trim() || '',
-      attachments: existingAttachments,
-    };
-    if (existing) {
-      await DB.updateRecord(record);
-    } else {
-      await DB.setRecord(record);
+      const fd = new FormData(form);
+      const record = {
+        id,
+        type: fd.get('type'),
+        description: fd.get('description')?.trim() || '',
+        date: fd.get('date'),
+        cost: cost.value,
+        odometer: odometer.value,
+        category: fd.get('category')?.trim() || '',
+        vendor: fd.get('vendor')?.trim() || '',
+        notes: fd.get('notes')?.trim() || '',
+        attachments: existingAttachments,
+      };
+      if (existing) {
+        await DB.updateRecord(record);
+      } else {
+        await DB.setRecord(record);
+      }
+      closeModal();
+      toast('Dépense enregistrée');
+      onDone();
+    } catch (err) {
+      console.error("Enregistrement de la dépense échoué :", err);
+      toast("Impossible d'enregistrer la dépense. Réessaie.");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Enregistrer';
     }
-    closeModal();
-    toast('Dépense enregistrée');
-    onDone();
   });
 
   if (existing) {
     document.getElementById('btn-delete').addEventListener('click', async () => {
-      await Promise.all(existingAttachments.map((a) => deleteAttachment(a.path)));
-      await DB.deleteRecord(existing.id);
-      closeModal();
-      toast('Dépense supprimée');
-      onDone();
+      const attachmentMessage = existingAttachments.length
+        ? ` et ses ${existingAttachments.length} document(s) joint(s)`
+        : '';
+      if (!window.confirm(`Supprimer cette dépense${attachmentMessage} ? Cette action est irréversible.`)) return;
+      try {
+        await Promise.all(existingAttachments.map((a) => deleteAttachment(a.path)));
+        await DB.deleteRecord(existing.id);
+        closeModal();
+        toast('Dépense supprimée');
+        onDone();
+      } catch (err) {
+        console.error('Suppression de la dépense échouée :', err);
+        toast("Impossible de supprimer la dépense. Réessaie.");
+      }
     });
+  }
+}
+
+function safeAttachmentUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' ? url.href : '';
+  } catch {
+    return '';
   }
 }

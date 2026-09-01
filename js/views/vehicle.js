@@ -1,5 +1,5 @@
 import { DB } from '../db.js';
-import { openModal, closeModal, toast, escapeHTML, parseDecimal } from '../utils.js';
+import { openModal, closeModal, toast, escapeHTML, todayISO, validateDateField, validateNumberField } from '../utils.js';
 import { resolveLocation, getCurrentPosition } from '../geo.js';
 
 export async function openVehicleModal(onSaved) {
@@ -11,25 +11,25 @@ export async function openVehicleModal(onSaved) {
     </div>
     <form id="vehicle-form" class="form">
       <label>Surnom de la van
-        <input type="text" name="nickname" value="${v.nickname || ''}" placeholder="ex: Buddy" />
+        <input type="text" name="nickname" value="${escapeHTML(v.nickname || '')}" placeholder="ex: Buddy" />
       </label>
       <label>Marque
-        <input type="text" name="make" value="${v.make || ''}" />
+        <input type="text" name="make" value="${escapeHTML(v.make || '')}" />
       </label>
       <label>Modèle
-        <input type="text" name="model" value="${v.model || ''}" />
+        <input type="text" name="model" value="${escapeHTML(v.model || '')}" />
       </label>
       <label>Année
-        <input type="number" name="year" value="${v.year || ''}" />
+        <input type="number" name="year" min="1886" max="${new Date().getFullYear() + 1}" value="${escapeHTML(v.year || '')}" />
       </label>
       <label>Date d'achat
-        <input type="date" name="purchaseDate" value="${v.purchaseDate || ''}" />
+        <input type="date" name="purchaseDate" max="${todayISO()}" value="${escapeHTML(v.purchaseDate || '')}" />
       </label>
       <label>Kilométrage à l'achat
-        <input type="text" inputmode="decimal" name="purchaseOdometer" value="${v.purchaseOdometer ?? ''}" />
+        <input type="text" inputmode="decimal" name="purchaseOdometer" value="${escapeHTML(v.purchaseOdometer ?? '')}" />
       </label>
       <label>Prix d'achat
-        <input type="text" inputmode="decimal" name="purchasePrice" value="${v.purchasePrice ?? ''}" />
+        <input type="text" inputmode="decimal" name="purchasePrice" value="${escapeHTML(v.purchasePrice ?? '')}" />
       </label>
       <label>Localisation de la maison
         <div class="location-row">
@@ -61,26 +61,45 @@ export async function openVehicleModal(onSaved) {
 
   document.getElementById('vehicle-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const form = e.target;
+    const year = validateNumberField(form, 'year', { label: "L'année", min: 1886, max: new Date().getFullYear() + 1, integer: true });
+    const purchaseDateIsValid = validateDateField(form, 'purchaseDate', { label: "La date d'achat", max: todayISO() });
+    const purchaseOdometer = validateNumberField(form, 'purchaseOdometer', { label: "Le kilométrage à l'achat", min: 0 });
+    const purchasePrice = validateNumberField(form, 'purchasePrice', { label: "Le prix d'achat", min: 0 });
+    if (!year.valid || !purchaseDateIsValid || !purchaseOdometer.valid || !purchasePrice.valid) {
+      form.reportValidity();
+      return;
+    }
+
+    const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
-    const fd = new FormData(e.target);
-    const homeLocationInput = fd.get('homeLocationText')?.trim() || '';
-    const resolvedHome = await resolveLocation(homeLocationInput);
-    const data = {
-      nickname: fd.get('nickname')?.trim() || '',
-      make: fd.get('make')?.trim() || '',
-      model: fd.get('model')?.trim() || '',
-      year: fd.get('year') ? Number(fd.get('year')) : null,
-      purchaseDate: fd.get('purchaseDate') || '',
-      purchaseOdometer: fd.get('purchaseOdometer') ? parseDecimal(fd.get('purchaseOdometer')) : null,
-      purchasePrice: fd.get('purchasePrice') ? parseDecimal(fd.get('purchasePrice')) : null,
-      homeLocationText: resolvedHome.locationText,
-      homeLat: resolvedHome.lat,
-      homeLng: resolvedHome.lng,
-    };
-    await DB.saveVehicle(data);
-    closeModal();
-    toast(homeLocationInput && resolvedHome.lat == null ? 'Profil enregistré (localisation de la maison introuvable)' : 'Profil enregistré');
-    if (onSaved) onSaved();
+    submitBtn.textContent = 'Enregistrement…';
+    try {
+      const fd = new FormData(form);
+      const homeLocationInput = fd.get('homeLocationText')?.trim() || '';
+      const resolvedHome = await resolveLocation(homeLocationInput);
+      const data = {
+        nickname: fd.get('nickname')?.trim() || '',
+        make: fd.get('make')?.trim() || '',
+        model: fd.get('model')?.trim() || '',
+        year: year.value,
+        purchaseDate: fd.get('purchaseDate') || '',
+        purchaseOdometer: purchaseOdometer.value,
+        purchasePrice: purchasePrice.value,
+        homeLocationText: resolvedHome.locationText,
+        homeLat: resolvedHome.lat,
+        homeLng: resolvedHome.lng,
+      };
+      await DB.saveVehicle(data);
+      closeModal();
+      toast(homeLocationInput && resolvedHome.lat == null ? 'Profil enregistré (localisation de la maison introuvable)' : 'Profil enregistré');
+      if (onSaved) onSaved();
+    } catch (err) {
+      console.error('Enregistrement du profil échoué :', err);
+      toast("Impossible d'enregistrer le profil. Réessaie.");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Enregistrer';
+    }
   });
 }

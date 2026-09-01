@@ -28,17 +28,40 @@ function buildNav(active) {
   });
 }
 
-async function navigate(key) {
+function showLoading() {
+  view.innerHTML = '<p class="status-message" role="status">Chargement…</p>';
+}
+
+function showLoadError(key) {
+  view.innerHTML = `
+    <div class="status-message status-error" role="alert">
+      <p>Impossible de charger cette page. Vérifie ta connexion puis réessaie.</p>
+      <button class="btn-secondary" id="btn-retry">Réessayer</button>
+    </div>
+  `;
+  document.getElementById('btn-retry').addEventListener('click', () => navigate(key, false));
+}
+
+async function navigate(key, updateHash = true) {
   if (!routes[key]) key = 'dashboard';
-  location.hash = key;
+  if (updateHash && location.hash !== `#${key}`) {
+    location.hash = key;
+    return;
+  }
   buildNav(key);
   view.scrollTop = 0;
-  await routes[key].render(view);
+  showLoading();
+  try {
+    await routes[key].render(view);
+  } catch (err) {
+    console.error('Chargement de la page échoué :', err);
+    showLoadError(key);
+  }
 }
 
 window.addEventListener('hashchange', () => {
   const key = location.hash.replace('#', '') || 'dashboard';
-  navigate(key);
+  navigate(key, false);
 });
 
 function renderLogin() {

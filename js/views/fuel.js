@@ -1,5 +1,5 @@
 import { DB } from '../db.js';
-import { money, km, fmtDate, todayISO, openModal, closeModal, toast, escapeHTML, parseDecimal } from '../utils.js';
+import { money, km, fmtDate, todayISO, openModal, closeModal, toast, escapeHTML, validateDateField, validateNumberField } from '../utils.js';
 
 let activeTab = 'fuel';
 
@@ -102,12 +102,24 @@ function averageConsumption(withConsumption) {
   return vals.reduce((a, b) => a + b, 0) / vals.length;
 }
 
+async function confirmOlderOdometer(odometer, recordId) {
+  const records = await DB.getAllRecords();
+  const highest = records
+    .filter((r) => r.id !== recordId && typeof r.odometer === 'number')
+    .reduce((max, r) => Math.max(max, r.odometer), -Infinity);
+  if (odometer >= highest) return true;
+  return window.confirm(
+    `Ce kilométrage (${km(odometer)}) est inférieur au plus grand relevé existant (${km(highest)}). `
+    + 'Veux-tu enregistrer un relevé plus ancien quand même ?'
+  );
+}
+
 function row(r) {
   const sub = [fmtDate(r.date), typeof r.odometer === 'number' ? km(r.odometer) : null, r.liters ? r.liters.toFixed(1) + ' L' : null]
     .filter(Boolean).join(' · ');
   const consumptionBadge = r.consumption ? `<div class="record-badge">${r.consumption.toFixed(1)} L/100km</div>` : '';
   return `
-    <div class="record-row" data-id="${r.id}">
+    <div class="record-row" data-id="${escapeHTML(r.id)}">
       <div class="record-icon">⛽</div>
       <div class="record-main">
         <div class="record-title">${r.fullTank ? 'Plein complet' : 'Plein partiel'} ${consumptionBadge}</div>
@@ -120,7 +132,7 @@ function row(r) {
 
 function odoRow(r) {
   return `
-    <div class="record-row" data-id="${r.id}">
+    <div class="record-row" data-id="${escapeHTML(r.id)}">
       <div class="record-icon">🧭</div>
       <div class="record-main">
         <div class="record-title">${km(r.odometer)}</div>
@@ -138,23 +150,23 @@ function openForm(existing, onDone) {
     </div>
     <form id="fuel-form" class="form">
       <label>Date
-        <input type="date" name="date" value="${existing?.date || todayISO()}" required />
+        <input type="date" name="date" value="${escapeHTML(existing?.date || todayISO())}" required />
       </label>
       <label>Kilométrage
-        <input type="text" inputmode="decimal" name="odometer" value="${existing?.odometer ?? ''}" required />
+        <input type="text" inputmode="decimal" name="odometer" value="${escapeHTML(existing?.odometer ?? '')}" required />
       </label>
       <label>Litres
-        <input type="text" inputmode="decimal" name="liters" value="${existing?.liters ?? ''}" required />
+        <input type="text" inputmode="decimal" name="liters" value="${escapeHTML(existing?.liters ?? '')}" required />
       </label>
       <label>Coût total ($)
-        <input type="text" inputmode="decimal" name="cost" value="${existing?.cost ?? ''}" required />
+        <input type="text" inputmode="decimal" name="cost" value="${escapeHTML(existing?.cost ?? '')}" required />
       </label>
       <label class="checkbox-label">
         <input type="checkbox" name="fullTank" ${existing?.fullTank !== false ? 'checked' : ''} />
         Plein complet (nécessaire pour calculer la consommation)
       </label>
       <label>Notes
-        <input type="text" name="notes" value="${existing?.notes || ''}" placeholder="optionnel" />
+        <input type="text" name="notes" value="${escapeHTML(existing?.notes || '')}" placeholder="optionnel" />
       </label>
       <div class="form-actions">
         <button type="submit" class="btn-primary">Enregistrer</button>
@@ -166,33 +178,60 @@ function openForm(existing, onDone) {
   document.getElementById('modal-close').addEventListener('click', closeModal);
   document.getElementById('fuel-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const fd = new FormData(e.target);
-    const record = {
-      type: 'fuel',
-      date: fd.get('date'),
-      odometer: parseDecimal(fd.get('odometer')),
-      liters: parseDecimal(fd.get('liters')),
-      cost: parseDecimal(fd.get('cost')),
-      fullTank: fd.get('fullTank') === 'on',
-      notes: fd.get('notes')?.trim() || '',
-    };
-    if (existing) {
-      record.id = existing.id;
-      await DB.updateRecord(record);
-    } else {
-      await DB.addRecord(record);
+    const form = e.target;
+    const dateIsValid = validateDateField(form, 'date', { label: 'La date', required: true, max: todayISO() });
+    const odometer = validateNumberField(form, 'odometer', { label: 'Le kilométrage', required: true, min: 0 });
+    const liters = validateNumberField(form, 'liters', { label: 'Le nombre de litres', required: true, min: 0.01 });
+    const cost = validateNumberField(form, 'cost', { label: 'Le coût total', required: true, min: 0.01 });
+    if (!dateIsValid || !odometer.valid || !liters.valid || !cost.valid) {
+      form.reportValidity();
+      return;
     }
-    closeModal();
-    toast('Plein enregistré');
-    onDone();
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Enregistrement…';
+    try {
+      if (!(await confirmOlderOdometer(odometer.value, existing?.id))) return;
+      const fd = new FormData(form);
+      const record = {
+        type: 'fuel',
+        date: fd.get('date'),
+        odometer: odometer.value,
+        liters: liters.value,
+        cost: cost.value,
+        fullTank: fd.get('fullTank') === 'on',
+        notes: fd.get('notes')?.trim() || '',
+      };
+      if (existing) {
+        record.id = existing.id;
+        await DB.updateRecord(record);
+      } else {
+        await DB.addRecord(record);
+      }
+      closeModal();
+      toast('Plein enregistré');
+      onDone();
+    } catch (err) {
+      console.error('Enregistrement du plein échoué :', err);
+      toast("Impossible d'enregistrer le plein. Réessaie.");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Enregistrer';
+    }
   });
 
   if (existing) {
     document.getElementById('btn-delete').addEventListener('click', async () => {
-      await DB.deleteRecord(existing.id);
-      closeModal();
-      toast('Plein supprimé');
-      onDone();
+      if (!window.confirm('Supprimer ce plein ? Cette action est irréversible.')) return;
+      try {
+        await DB.deleteRecord(existing.id);
+        closeModal();
+        toast('Plein supprimé');
+        onDone();
+      } catch (err) {
+        console.error('Suppression du plein échouée :', err);
+        toast("Impossible de supprimer le plein. Réessaie.");
+      }
     });
   }
 }
@@ -208,10 +247,10 @@ function openOdometerForm(existing, onDone) {
     </div>
     <form id="odo-form" class="form">
       <label>Date
-        <input type="date" name="date" value="${existing?.date || todayISO()}" required />
+        <input type="date" name="date" value="${escapeHTML(existing?.date || todayISO())}" required />
       </label>
       <label>Kilométrage
-        <input type="text" inputmode="decimal" name="odometer" value="${existing?.odometer ?? ''}" required />
+        <input type="text" inputmode="decimal" name="odometer" value="${escapeHTML(existing?.odometer ?? '')}" required />
       </label>
       <label>Notes
         <input type="text" name="notes" value="${existing ? escapeHTML(existing.notes || '') : ''}" placeholder="optionnel" />
@@ -226,30 +265,55 @@ function openOdometerForm(existing, onDone) {
   document.getElementById('modal-close').addEventListener('click', closeModal);
   document.getElementById('odo-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const fd = new FormData(e.target);
-    const record = {
-      type: 'odometer',
-      date: fd.get('date'),
-      odometer: parseDecimal(fd.get('odometer')),
-      notes: fd.get('notes')?.trim() || '',
-    };
-    if (existing) {
-      record.id = existing.id;
-      await DB.updateRecord(record);
-    } else {
-      await DB.addRecord(record);
+    const form = e.target;
+    const dateIsValid = validateDateField(form, 'date', { label: 'La date', required: true, max: todayISO() });
+    const odometer = validateNumberField(form, 'odometer', { label: 'Le kilométrage', required: true, min: 0 });
+    if (!dateIsValid || !odometer.valid) {
+      form.reportValidity();
+      return;
     }
-    closeModal();
-    toast('Relevé enregistré');
-    onDone();
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Enregistrement…';
+    try {
+      if (!(await confirmOlderOdometer(odometer.value, existing?.id))) return;
+      const fd = new FormData(form);
+      const record = {
+        type: 'odometer',
+        date: fd.get('date'),
+        odometer: odometer.value,
+        notes: fd.get('notes')?.trim() || '',
+      };
+      if (existing) {
+        record.id = existing.id;
+        await DB.updateRecord(record);
+      } else {
+        await DB.addRecord(record);
+      }
+      closeModal();
+      toast('Relevé enregistré');
+      onDone();
+    } catch (err) {
+      console.error('Enregistrement du relevé échoué :', err);
+      toast("Impossible d'enregistrer le relevé. Réessaie.");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Enregistrer';
+    }
   });
 
   if (existing) {
     document.getElementById('btn-delete').addEventListener('click', async () => {
-      await DB.deleteRecord(existing.id);
-      closeModal();
-      toast('Relevé supprimé');
-      onDone();
+      if (!window.confirm('Supprimer ce relevé de kilométrage ? Cette action est irréversible.')) return;
+      try {
+        await DB.deleteRecord(existing.id);
+        closeModal();
+        toast('Relevé supprimé');
+        onDone();
+      } catch (err) {
+        console.error('Suppression du relevé échouée :', err);
+        toast("Impossible de supprimer le relevé. Réessaie.");
+      }
     });
   }
 }

@@ -111,16 +111,30 @@ export async function renderDashboard(container) {
     openVehicleModal(() => renderDashboard(container));
   });
 
-  document.getElementById('btn-signout').addEventListener('click', () => signOut(auth));
+  document.getElementById('btn-signout').addEventListener('click', async () => {
+    try {
+      await signOut(auth);
+    } catch (err) {
+      console.error('Déconnexion échouée :', err);
+      toast('Impossible de se déconnecter. Réessaie.');
+    }
+  });
 
   if (legacy) {
     document.getElementById('btn-migrate').addEventListener('click', async (e) => {
       e.target.disabled = true;
       e.target.textContent = 'Importation…';
-      const count = await migrateLegacyData(DB);
-      localStorage.setItem('vanlog_migrated', '1');
-      toast(`${count} entrée(s) importée(s)`);
-      renderDashboard(container);
+      try {
+        const count = await migrateLegacyData(DB);
+        localStorage.setItem('vanlog_migrated', '1');
+        toast(`${count} entrée(s) importée(s)`);
+        renderDashboard(container);
+      } catch (err) {
+        console.error('Importation des données locales échouée :', err);
+        toast("Impossible d'importer les données. Réessaie.");
+        e.target.disabled = false;
+        e.target.textContent = 'Importer mes données locales';
+      }
     });
   }
 }
