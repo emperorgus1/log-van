@@ -1,6 +1,6 @@
 import { DB } from '../db.js';
 import { openModal, closeModal, toast, escapeHTML, todayISO, validateDateField, validateNumberField } from '../utils.js';
-import { resolveLocation, getCurrentPosition, confirmLocationPrivacy, locationNeedsGeocoding } from '../geo.js';
+import { resolveLocation, getCurrentPosition } from '../geo.js';
 
 export async function openVehicleModal(onSaved) {
   const v = (await DB.getVehicle()) || {};
@@ -77,7 +77,6 @@ export async function openVehicleModal(onSaved) {
     try {
       const fd = new FormData(form);
       const homeLocationInput = fd.get('homeLocationText')?.trim() || '';
-      if (!confirmLocationPrivacy({ geocoding: locationNeedsGeocoding(homeLocationInput) })) return;
       const resolvedHome = await resolveLocation(homeLocationInput);
       const data = {
         nickname: fd.get('nickname')?.trim() || '',

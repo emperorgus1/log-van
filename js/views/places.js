@@ -1,6 +1,6 @@
 import { DB } from '../db.js';
 import { fmtDate, todayISO, openModal, closeModal, toast, escapeHTML, validateDateField } from '../utils.js';
-import { resolveLocation, getCurrentPosition, googleMapsUrl, drivingDistanceKm, confirmLocationPrivacy, locationNeedsGeocoding } from '../geo.js';
+import { resolveLocation, getCurrentPosition, googleMapsUrl, drivingDistanceKm } from '../geo.js';
 
 let activeTab = 'list';
 let leafletPromise = null;
@@ -195,13 +195,11 @@ function openForm(existing, onDone) {
     try {
       const fd = new FormData(form);
       const locationInput = fd.get('locationText')?.trim() || '';
-      const vehicle = await DB.getVehicle();
-      const needsRouting = Boolean(locationInput && vehicle && typeof vehicle.homeLat === 'number');
-      if (!confirmLocationPrivacy({ geocoding: locationNeedsGeocoding(locationInput), routing: needsRouting })) return;
       const resolved = await resolveLocation(locationInput);
 
       let distanceFromHomeKm = null;
       if (resolved.lat != null) {
+        const vehicle = await DB.getVehicle();
         if (vehicle && typeof vehicle.homeLat === 'number') {
           distanceFromHomeKm = await drivingDistanceKm(
             { lat: vehicle.homeLat, lng: vehicle.homeLng },
