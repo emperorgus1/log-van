@@ -27,7 +27,7 @@ Légende : **P1** = à faire en premier, **P2** = important, **P3** = améliorat
   - Nettoyer les fichiers téléversés si l'enregistrement de la fiche échoue.
   - Vérification : simuler un échec d'enregistrement et vérifier qu'aucun document inutile ne reste dans Storage.
 
-- [ ] **P2 — Renforcer les règles Firebase.**
+- [x] **P2 — Renforcer les règles Firebase.**
   - Conserver l'isolation actuelle par utilisateur.
   - Ajouter la validation des champs attendus dans Firestore et du type de fichier dans Storage.
   - Vérification : publier les règles et vérifier qu'un fichier ou une donnée non conforme est refusé.
@@ -120,3 +120,4 @@ Légende : **P1** = à faire en premier, **P2** = important, **P3** = améliorat
 | --- | --- | --- | --- |
 | 2026-08-31 | Protection des textes, confirmations, validation et messages d'état | Test sur l'aperçu Netlify | Les quatre éléments ont été vérifiés. |
 | 2026-08-31 | Suppressions partielles et fichiers orphelins | Ajout puis suppression d'une pièce jointe et de sa dépense sur l'aperçu Netlify | Règles Firebase Storage publiées et fonctionnement confirmé. |
+| 2026-08-31 | Renforcement des règles Firebase | Règles Firestore et Storage publiées dans Firebase | Isolation par compte, validation des données et types de fichiers autorisés. |
