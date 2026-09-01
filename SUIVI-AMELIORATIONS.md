@@ -100,7 +100,7 @@ Légende : **P1** = à faire en premier, **P2** = important, **P3** = améliorat
 
 ## Confort visuel et maintenance
 
-- [ ] **P3 — Alléger et enrichir le tableau de bord.**
+- [x] **P3 — Alléger et enrichir le tableau de bord.**
   - Mettre en avant les indicateurs les plus utiles sur petit écran.
   - Ajouter des graphiques simples pour les dépenses et la consommation.
   - Vérification : contrôler la lisibilité sur téléphone et ordinateur.
