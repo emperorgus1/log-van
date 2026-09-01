@@ -54,21 +54,21 @@ Légende : **P1** = à faire en premier, **P2** = important, **P3** = améliorat
   - Montrer un message compréhensible si Firebase, la carte ou un téléversement échoue.
   - Vérification : couper temporairement le réseau et contrôler le message affiché.
 
-- [ ] **P2 — Corriger la date locale autour de minuit.**
+- [x] **P2 — Corriger la date locale autour de minuit.**
   - Générer la date à partir du fuseau horaire local, plutôt que de l'heure UTC.
   - Vérification : tester une date vers la fin de journée au Québec.
 
-- [ ] **P2 — Fiabiliser l'impression et l'export.**
+- [x] **P2 — Fiabiliser l'impression et l'export.**
   - Attendre la fin réelle de l'impression avant de restaurer l'interface.
   - Vérifier les caractères accentués et les guillemets dans le CSV.
   - Vérification : ouvrir le CSV dans Excel ou LibreOffice et imprimer un rapport.
 
-- [ ] **P2 — Améliorer les calculs.**
+- [x] **P2 — Améliorer les calculs.**
   - Calculer la consommation moyenne en tenant compte des distances parcourues.
   - Repérer les relevés incohérents et expliquer les calculs indisponibles.
   - Vérification : comparer le résultat avec un exemple calculé à la main.
 
-- [ ] **P2 — Améliorer la synchronisation entre appareils.**
+- [x] **P2 — Améliorer la synchronisation entre appareils.**
   - Actualiser les données quand elles changent sur un autre appareil.
   - Éviter d'écraser le profil véhicule complet quand un seul champ est modifié.
   - Vérification : modifier une donnée depuis deux sessions et vérifier le résultat.
