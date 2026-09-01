@@ -28,7 +28,8 @@ export async function handler(event) {
   }
 
   try {
-    const url = new URL('https://api.heigit.org/v2/directions/driving-car');
+    // HeiGIT conserve le préfixe /openrouteservice dans la nouvelle adresse.
+    const url = new URL('https://api.heigit.org/openrouteservice/v2/directions/driving-car');
     url.searchParams.set('start', `${startLng},${startLat}`);
     url.searchParams.set('end', `${endLng},${endLat}`);
     const response = await fetch(url, { headers: { Authorization: apiKey } });
