@@ -105,7 +105,7 @@ Légende : **P1** = à faire en premier, **P2** = important, **P3** = améliorat
   - Ajouter des graphiques simples pour les dépenses et la consommation.
   - Vérification : contrôler la lisibilité sur téléphone et ordinateur.
 
-- [ ] **P3 — Stabiliser les icônes et le rendu visuel.**
+- [x] **P3 — Stabiliser les icônes et le rendu visuel.**
   - Évaluer le remplacement des emojis par des icônes stables si le rendu diffère trop selon l'appareil.
   - Vérification : comparer Android, iPhone et ordinateur lorsque possible.
 
