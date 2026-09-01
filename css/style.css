@@ -332,15 +332,15 @@ html, body {
 
 .nav-item {
   min-width: 0;
-  background: none;
-  border: none;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 2px;
   padding: 8px 4px 6px;
   color: var(--text-muted);
   cursor: pointer;
+  text-decoration: none;
 }
 
 .nav-item.active { color: var(--primary); }

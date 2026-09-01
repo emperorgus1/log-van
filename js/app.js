@@ -34,14 +34,11 @@ updateConnectionStatus();
 
 function buildNav(active) {
   nav.innerHTML = Object.entries(routes).map(([key, r]) => `
-    <button class="nav-item${key === active ? ' active' : ''}" data-route="${key}" aria-label="${r.label}">
+    <a class="nav-item${key === active ? ' active' : ''}" href="#${key}" aria-label="${r.label}"${key === active ? ' aria-current="page"' : ''}>
       <span class="nav-icon">${r.icon}</span>
       <span class="nav-label">${r.label}</span>
-    </button>
+    </a>
   `).join('');
-  nav.querySelectorAll('.nav-item').forEach((btn) => {
-    btn.addEventListener('click', () => navigate(btn.dataset.route));
-  });
 }
 
 function showLoading() {
