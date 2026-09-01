@@ -9,8 +9,12 @@ service firebase.storage {
   match /b/{bucket}/o {
     match /users/{uid}/{allPaths=**} {
       allow read: if request.auth != null && request.auth.uid == uid;
-      allow write: if request.auth != null && request.auth.uid == uid
+      // Pour un ajout ou une modification, on limite la taille à 10 Mo.
+      // Lors d'une suppression, request.resource n'existe plus : cette action
+      // est donc autorisée séparément, toujours uniquement au propriétaire.
+      allow create, update: if request.auth != null && request.auth.uid == uid
         && request.resource.size < 10 * 1024 * 1024;
+      allow delete: if request.auth != null && request.auth.uid == uid;
     }
   }
 }
