@@ -39,7 +39,9 @@ export async function uploadAttachment(recordId, file) {
 export async function deleteAttachment(path) {
   try {
     await deleteObject(ref(storage, path));
+    return true;
   } catch (err) {
     console.warn('Suppression du fichier échouée :', err);
+    return false;
   }
 }

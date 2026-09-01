@@ -13,12 +13,12 @@ Légende : **P1** = à faire en premier, **P2** = important, **P3** = améliorat
 
 ## Sécurité et intégrité des données
 
-- [ ] **P1 — Protéger tous les textes enregistrés contre l'injection HTML.**
+- [x] **P1 — Protéger tous les textes enregistrés contre l'injection HTML.**
   - Échapper chaque donnée venant de Firestore avant de l'insérer dans du HTML.
   - Corriger les formulaires véhicule, essence, entretien et le rapport imprimable.
   - Vérification : enregistrer des caractères comme `<`, `>`, `&` et `"`, puis vérifier qu'ils s'affichent comme du texte, jamais comme du code.
 
-- [ ] **P1 — Confirmer les suppressions.**
+- [x] **P1 — Confirmer les suppressions.**
   - Demander une confirmation claire avant de supprimer une entrée ou ses documents.
   - Vérification : essayer de supprimer une entrée, annuler, puis vérifier qu'elle est toujours présente.
 
@@ -44,12 +44,12 @@ Légende : **P1** = à faire en premier, **P2** = important, **P3** = améliorat
 
 ## Formulaires, fiabilité et synchronisation
 
-- [ ] **P1 — Valider les montants, kilométrages et dates.**
+- [x] **P1 — Valider les montants, kilométrages et dates.**
   - Refuser les valeurs invalides, négatives ou incohérentes.
   - Avertir lorsqu'un kilométrage est inférieur au dernier relevé.
   - Vérification : essayer des valeurs comme `abc`, `-20` et un kilométrage qui recule.
 
-- [ ] **P1 — Afficher les chargements et les erreurs.**
+- [x] **P1 — Afficher les chargements et les erreurs.**
   - Afficher un état de chargement pendant la lecture ou l'enregistrement.
   - Montrer un message compréhensible si Firebase, la carte ou un téléversement échoue.
   - Vérification : couper temporairement le réseau et contrôler le message affiché.
@@ -118,4 +118,4 @@ Légende : **P1** = à faire en premier, **P2** = important, **P3** = améliorat
 
 | Date | Modification cochée | Vérification effectuée | Notes |
 | --- | --- | --- | --- |
-| | | | |
+| 2026-08-31 | Protection des textes, confirmations, validation et messages d'état | Test sur l'aperçu Netlify | Les quatre éléments ont été vérifiés. |

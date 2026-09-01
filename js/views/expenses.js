@@ -74,7 +74,7 @@ function fileSize(bytes) {
 
 function openForm(existing, onDone) {
   const existingAttachments = existing?.attachments ? [...existing.attachments] : [];
-  const removedPaths = [];
+  const removedAttachments = [];
   const pendingFiles = []; // { localId, file, previewUrl }
   let nextLocalId = 1;
 
@@ -146,7 +146,7 @@ function openForm(existing, onDone) {
         if (btn.dataset.path) {
           const idx = existingAttachments.findIndex((a) => a.path === btn.dataset.path);
           if (idx !== -1) {
-            removedPaths.push(existingAttachments[idx].path);
+            removedAttachments.push(existingAttachments[idx]);
             existingAttachments.splice(idx, 1);
           }
         } else if (btn.dataset.localId) {
@@ -194,6 +194,7 @@ function openForm(existing, onDone) {
 
     const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
+    const uploadedAttachments = [];
     try {
       const id = existing?.id || DB.newId();
 
@@ -201,12 +202,9 @@ function openForm(existing, onDone) {
         submitBtn.textContent = 'Envoi des documents…';
         for (const p of pendingFiles) {
           const uploaded = await uploadAttachment(id, p.file);
-          existingAttachments.push(uploaded);
-          if (p.previewUrl) URL.revokeObjectURL(p.previewUrl);
+          uploadedAttachments.push(uploaded);
         }
       }
-
-      await Promise.all(removedPaths.map((path) => deleteAttachment(path)));
 
       const fd = new FormData(form);
       const record = {
@@ -219,18 +217,40 @@ function openForm(existing, onDone) {
         category: fd.get('category')?.trim() || '',
         vendor: fd.get('vendor')?.trim() || '',
         notes: fd.get('notes')?.trim() || '',
-        attachments: existingAttachments,
+        attachments: [...existingAttachments, ...uploadedAttachments],
       };
       if (existing) {
         await DB.updateRecord(record);
       } else {
         await DB.setRecord(record);
       }
+
+      // La fiche est enregistrée avant de supprimer les anciens fichiers :
+      // une panne ne peut donc pas laisser un lien vers un fichier déjà effacé.
+      const deletionResults = await Promise.all(removedAttachments.map((a) => deleteAttachment(a.path)));
+      const remainingAttachments = removedAttachments.filter((_, index) => !deletionResults[index]);
+      if (remainingAttachments.length) {
+        try {
+          await DB.updateRecord({
+            ...record,
+            attachments: [...record.attachments, ...remainingAttachments],
+          });
+          toast("Dépense enregistrée, mais certains documents sont restés joints.");
+        } catch (err) {
+          console.error('Restauration des pièces jointes échouée :', err);
+          toast("Dépense enregistrée, mais vérifie les anciens documents joints.");
+        }
+      } else {
+        toast('Dépense enregistrée');
+      }
+      pendingFiles.forEach((p) => {
+        if (p.previewUrl) URL.revokeObjectURL(p.previewUrl);
+      });
       closeModal();
-      toast('Dépense enregistrée');
       onDone();
     } catch (err) {
       console.error("Enregistrement de la dépense échoué :", err);
+      await Promise.all(uploadedAttachments.map((a) => deleteAttachment(a.path));
       toast("Impossible d'enregistrer la dépense. Réessaie.");
     } finally {
       submitBtn.disabled = false;
@@ -245,7 +265,15 @@ function openForm(existing, onDone) {
         : '';
       if (!window.confirm(`Supprimer cette dépense${attachmentMessage} ? Cette action est irréversible.`)) return;
       try {
-        await Promise.all(existingAttachments.map((a) => deleteAttachment(a.path)));
+        const deletionResults = await Promise.all(existingAttachments.map((a) => deleteAttachment(a.path)));
+        const remainingAttachments = existingAttachments.filter((_, index) => !deletionResults[index]);
+        if (remainingAttachments.length) {
+          await DB.updateRecord({ ...existing, attachments: remainingAttachments });
+          closeModal();
+          toast("Certains documents n'ont pas été supprimés. Réessaie plus tard.");
+          onDone();
+          return;
+        }
         await DB.deleteRecord(existing.id);
         closeModal();
         toast('Dépense supprimée');
