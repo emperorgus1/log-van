@@ -74,6 +74,7 @@ Légende : **P1** = à faire en premier, **P2** = important, **P3** = améliorat
   - Vérification : modifier une donnée depuis deux sessions et vérifier le résultat.
 
 - [ ] **P3 — Préparer l'application pour davantage de données.**
+  - À faire éventuellement, seulement si l'historique devient important ou que l'application ralentit.
   - Charger seulement les données utiles à chaque écran.
   - Ajouter une limite ou une pagination si nécessaire.
   - Vérification : tester avec un volume important de données sans ralentissement notable.
@@ -85,12 +86,6 @@ Légende : **P1** = à faire en premier, **P2** = important, **P3** = améliorat
   - Mettre en cache les ressources nécessaires ou clarifier les limites du mode hors-ligne.
   - Ajouter un indicateur de connexion hors ligne.
   - Vérification : charger l'application, couper Internet, la fermer puis la rouvrir.
-
-- [ ] **P2 — Expliquer l'usage de la localisation (annulé).**
-  - Informer que les adresses sont envoyées à Nominatim pour être converties en coordonnées.
-  - Informer que les coordonnées peuvent être envoyées à OpenRouteService pour calculer une distance.
-  - Mettre en cache les localisations déjà résolues.
-  - Vérification : relire l'information avant la première utilisation d'une adresse.
 
 - [x] **P2 — Améliorer l'accessibilité.**
   - Ajouter des libellés accessibles aux boutons icônes.
@@ -109,11 +104,6 @@ Légende : **P1** = à faire en premier, **P2** = important, **P3** = améliorat
   - Évaluer le remplacement des emojis par des icônes stables si le rendu diffère trop selon l'appareil.
   - Vérification : comparer Android, iPhone et ordinateur lorsque possible.
 
-- [ ] **P2 — Ajouter des tests et de la documentation (annulé).**
-  - Créer des tests pour les décimales, les dates, les calculs et le CSV.
-  - Documenter le déploiement et la configuration Firebase.
-  - Vérification : une nouvelle installation peut être déployée à partir du guide.
-
 ## Journal des modifications réalisées
 
 | Date | Modification cochée | Vérification effectuée | Notes |
@@ -122,4 +112,3 @@ Légende : **P1** = à faire en premier, **P2** = important, **P3** = améliorat
 | 2026-08-31 | Suppressions partielles et fichiers orphelins | Ajout puis suppression d'une pièce jointe et de sa dépense sur l'aperçu Netlify | Règles Firebase Storage publiées et fonctionnement confirmé. |
 | 2026-08-31 | Renforcement des règles Firebase | Règles Firestore et Storage publiées dans Firebase | Isolation par compte, validation des données et types de fichiers autorisés. |
 | 2026-08-31 | Mode hors-ligne et accessibilité | Vérification du chargement de l'aperçu Netlify | Mise en cache des ressources essentielles, indicateur hors ligne, navigation clavier et respect de la réduction des animations. |
-| 2026-08-31 | Usage de la localisation | Décision du propriétaire | Annulé : aucun avertissement ni cache supplémentaire pour les adresses. |
