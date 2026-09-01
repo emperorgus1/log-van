@@ -84,25 +84,18 @@ export function googleMapsUrl(lat, lng) {
   return `https://www.google.com/maps?q=${lat},${lng}`;
 }
 
-// Clé gratuite OpenRouteService (openrouteservice.org) — voir README/instructions
-// pour la générer. Cette clé est nécessairement visible publiquement puisque
-// l'appli est un site statique sans serveur; le pire risque en cas de vol est
-// l'épuisement du quota gratuit quotidien, sans conséquence financière.
-const ORS_API_KEY = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjZlNWYwMzQxNmI5ODRkNGI5YzRjYWE2Y2Q0YTY2Y2Y3IiwiaCI6Im11cm11cjY0In0=';
-
-// Distance de conduite réelle (en km) entre deux points, via OpenRouteService.
-// Retourne null si la clé n'est pas configurée ou si l'appel échoue — appelant
-// doit alors se contenter de ne pas afficher de distance plutôt que planter.
+// Distance de conduite réelle (en km). La clé OpenRouteService est conservée
+// dans Netlify; elle n'est donc jamais envoyée au navigateur.
 export async function drivingDistanceKm(origin, destination) {
-  if (!ORS_API_KEY || ORS_API_KEY.startsWith('REMPLACE_PAR')) return null;
   try {
-    const url = `https://api.openrouteservice.org/v2/directions/driving-car?start=${origin.lng},${origin.lat}&end=${destination.lng},${destination.lat}`;
-    const res = await fetch(url, { headers: { Authorization: ORS_API_KEY } });
+    const params = new URLSearchParams({
+      start: `${origin.lng},${origin.lat}`,
+      end: `${destination.lng},${destination.lat}`,
+    });
+    const res = await fetch(`/.netlify/functions/distance?${params}`);
     if (!res.ok) return null;
     const data = await res.json();
-    const meters = data?.routes?.[0]?.summary?.distance
-      ?? data?.features?.[0]?.properties?.summary?.distance
-      ?? null;
+    const meters = data?.distance;
     return typeof meters === 'number' ? meters / 1000 : null;
   } catch (err) {
     console.warn('Calcul de distance échoué :', err);
