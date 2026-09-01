@@ -38,7 +38,10 @@ export async function handler(event) {
       return { statusCode: 502, body: 'Calcul de distance indisponible.' };
     }
     const data = await response.json();
-    const distance = data?.routes?.[0]?.summary?.distance;
+    // L'API peut répondre en JSON classique (`routes`) ou en GeoJSON (`features`).
+    // Les deux formats sont acceptés afin que le calcul reste compatible.
+    const distance = data?.routes?.[0]?.summary?.distance
+      ?? data?.features?.[0]?.properties?.summary?.distance;
     if (typeof distance !== 'number') {
       return { statusCode: 502, body: 'Réponse de distance invalide.' };
     }
