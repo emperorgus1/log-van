@@ -16,6 +16,9 @@ export async function renderFuel(container) {
   const totalCost = records.reduce((s, r) => s + (r.cost || 0), 0);
   const totalLiters = records.reduce((s, r) => s + (r.liters || 0), 0);
   const avgConsumption = averageConsumption(withConsumption);
+  const consumptionHint = avgConsumption === null
+    ? 'Ajoute deux pleins complets avec kilométrage pour calculer la consommation.'
+    : '';
 
   const fuelSection = `
     <div class="stat-grid stat-grid-3">
@@ -32,6 +35,7 @@ export async function renderFuel(container) {
         <div class="stat-value stat-value-sm">${avgConsumption !== null ? avgConsumption.toFixed(1) + ' L/100km' : '—'}</div>
       </div>
     </div>
+    ${consumptionHint ? `<p class="field-hint">${consumptionHint}</p>` : ''}
     <div class="record-list">
       ${sorted.length ? sorted.map(row).join('') : '<p class="empty-state">Aucun plein enregistré.</p>'}
     </div>
@@ -84,22 +88,35 @@ function attachConsumption(sortedByOdo) {
   let lastFullIdx = -1;
   return sortedByOdo.map((r, i) => {
     let consumption = null;
+    let consumptionDistance = null;
+    let consumptionLiters = null;
+    let consumptionIssue = '';
     if (r.fullTank && lastFullIdx !== -1) {
       const prev = sortedByOdo[lastFullIdx];
       const distance = r.odometer - prev.odometer;
       const between = sortedByOdo.slice(lastFullIdx + 1, i + 1);
       const liters = between.reduce((s, x) => s + (x.liters || 0), 0);
-      if (distance > 0 && liters > 0) consumption = (liters / distance) * 100;
+      if (distance > 0 && liters > 0) {
+        consumption = (liters / distance) * 100;
+        consumptionDistance = distance;
+        consumptionLiters = liters;
+      } else if (distance <= 0) {
+        consumptionIssue = 'Consommation indisponible : le kilométrage est incohérent.';
+      } else {
+        consumptionIssue = 'Consommation indisponible : il manque la quantité d’essence.';
+      }
     }
     if (r.fullTank) lastFullIdx = i;
-    return { ...r, consumption };
+    return { ...r, consumption, consumptionDistance, consumptionLiters, consumptionIssue };
   });
 }
 
 function averageConsumption(withConsumption) {
-  const vals = withConsumption.map((r) => r.consumption).filter((v) => v !== null && v !== undefined);
-  if (!vals.length) return null;
-  return vals.reduce((a, b) => a + b, 0) / vals.length;
+  const intervals = withConsumption.filter((r) => r.consumptionDistance !== null && r.consumptionLiters !== null);
+  if (!intervals.length) return null;
+  const distance = intervals.reduce((sum, r) => sum + r.consumptionDistance, 0);
+  const liters = intervals.reduce((sum, r) => sum + r.consumptionLiters, 0);
+  return distance > 0 && liters > 0 ? (liters / distance) * 100 : null;
 }
 
 async function confirmOlderOdometer(odometer, recordId) {
@@ -118,12 +135,14 @@ function row(r) {
   const sub = [fmtDate(r.date), typeof r.odometer === 'number' ? km(r.odometer) : null, r.liters ? r.liters.toFixed(1) + ' L' : null]
     .filter(Boolean).join(' · ');
   const consumptionBadge = r.consumption ? `<div class="record-badge">${r.consumption.toFixed(1)} L/100km</div>` : '';
+  const consumptionIssue = r.consumptionIssue ? `<div class="record-sub">${r.consumptionIssue}</div>` : '';
   return `
     <div class="record-row" data-id="${escapeHTML(r.id)}">
       <div class="record-icon">⛽</div>
       <div class="record-main">
         <div class="record-title">${r.fullTank ? 'Plein complet' : 'Plein partiel'} ${consumptionBadge}</div>
         <div class="record-sub">${sub}</div>
+        ${consumptionIssue}
       </div>
       <div class="record-cost">${r.cost ? money(r.cost) : ''}</div>
     </div>

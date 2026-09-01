@@ -4,6 +4,7 @@ import { renderFuel } from './views/fuel.js';
 import { renderPlaces } from './views/places.js';
 import { renderReports } from './views/reports.js';
 import { auth, provider, onAuthStateChanged, signInWithPopup } from './firebase.js';
+import { DB } from './db.js';
 
 const routes = {
   dashboard: { render: renderDashboard, label: 'Accueil', icon: '🏠' },
@@ -16,6 +17,8 @@ const routes = {
 const view = document.getElementById('view');
 const nav = document.getElementById('bottom-nav');
 const connectionStatus = document.getElementById('connection-status');
+let stopSyncListener = null;
+let syncRefreshTimer = null;
 
 function updateConnectionStatus() {
   const offline = !navigator.onLine;
@@ -53,6 +56,19 @@ function showLoadError(key) {
     </div>
   `;
   document.getElementById('btn-retry').addEventListener('click', () => navigate(key, false));
+}
+
+function startSyncListener() {
+  if (stopSyncListener) stopSyncListener();
+  stopSyncListener = DB.subscribeToChanges(() => {
+    // Regroupe les changements reçus presque simultanément de Firestore.
+    clearTimeout(syncRefreshTimer);
+    syncRefreshTimer = setTimeout(() => {
+      const key = location.hash.replace('#', '') || 'dashboard';
+      navigate(key, false);
+      toast('Données mises à jour depuis un autre appareil.');
+    }, 250);
+  });
 }
 
 async function navigate(key, updateHash = true) {
@@ -102,7 +118,10 @@ onAuthStateChanged(auth, (user) => {
   if (user) {
     const initial = location.hash.replace('#', '') || 'dashboard';
     navigate(initial);
+    startSyncListener();
   } else {
+    if (stopSyncListener) stopSyncListener();
+    stopSyncListener = null;
     renderLogin();
   }
 });

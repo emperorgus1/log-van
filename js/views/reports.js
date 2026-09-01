@@ -1,5 +1,5 @@
 import { DB } from '../db.js';
-import { money, km, fmtDate, todayISO, TYPE_LABELS, downloadFile, escapeHTML } from '../utils.js';
+import { money, km, fmtDate, todayISO, localDateISO, TYPE_LABELS, downloadFile, escapeHTML } from '../utils.js';
 
 const PERIODS = [
   { value: 'month', label: 'Ce mois-ci' },
@@ -15,12 +15,12 @@ let customEnd = '';
 function periodRange(period) {
   const now = new Date();
   if (period === 'month') {
-    const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    const start = localDateISO(new Date(now.getFullYear(), now.getMonth(), 1));
     const end = todayISO();
     return { start, end };
   }
   if (period === 'year') {
-    const start = new Date(now.getFullYear(), 0, 1).toISOString().slice(0, 10);
+    const start = localDateISO(new Date(now.getFullYear(), 0, 1));
     const end = todayISO();
     return { start, end };
   }
@@ -143,8 +143,12 @@ function printReport(vehicle, records, start, end, totalCost, distance) {
   `;
 
   document.body.classList.add('printing');
+  // afterprint est déclenché après l'impression ou son annulation, ce qui
+  // évite de restaurer l'écran avant que la fenêtre d'impression soit prête.
+  window.addEventListener('afterprint', () => {
+    document.body.classList.remove('printing');
+  }, { once: true });
   window.print();
-  setTimeout(() => document.body.classList.remove('printing'), 500);
 }
 
 function exportCSV(records, start, end) {
@@ -158,11 +162,12 @@ function exportCSV(records, start, end) {
     r.liters ?? '',
     r.category || '',
     r.vendor || '',
-    (r.notes || '').replace(/\n/g, ' '),
+    (r.notes || '').replace(/\r?\n/g, ' '),
   ]);
   const csv = [headers, ...rows]
-    .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    // Le point-virgule est le séparateur reconnu par Excel en français.
+    .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(';'))
     .join('\r\n');
   const filename = `carnet-van_${start}_${end}.csv`;
-  downloadFile(filename, '﻿' + csv, 'text/csv;charset=utf-8');
+  downloadFile(filename, '\uFEFF' + csv, 'text/csv;charset=utf-8');
 }

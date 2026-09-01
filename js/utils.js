@@ -14,10 +14,17 @@ export function fmtDate(iso) {
   return d.toLocaleDateString('fr-CA', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
+// Construit une date ISO à partir du calendrier local de l'appareil.
+// On évite ainsi que l'heure UTC fasse basculer la date à minuit.
+export function localDateISO(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function todayISO() {
-  const now = new Date();
-  const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
-  return localDate.toISOString().slice(0, 10);
+  return localDateISO();
 }
 
 export const TYPE_LABELS = {

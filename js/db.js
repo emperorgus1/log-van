@@ -12,6 +12,7 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  onSnapshot,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 function uid() {
@@ -35,7 +36,9 @@ export const DB = {
   },
 
   async saveVehicle(data) {
-    await setDoc(vehicleDoc(), data);
+    // Une modification du profil conserve les champs qui n'étaient pas
+    // présents dans le formulaire ouvert sur cet appareil.
+    await setDoc(vehicleDoc(), data, { merge: true });
   },
 
   async addRecord(record) {
@@ -73,5 +76,27 @@ export const DB = {
   async getRecordsByType(type) {
     const all = await this.getAllRecords();
     return all.filter((r) => r.type === type);
+  },
+
+  // Les écrans sont avertis lorsqu'une autre session modifie les données.
+  // Les premiers résultats sont ignorés : le rendu initial les a déjà chargés.
+  subscribeToChanges(onChange) {
+    let recordsReady = false;
+    let vehicleReady = false;
+    const notify = (snapshot, source) => {
+      if (!snapshot.metadata.hasPendingWrites) onChange(source);
+    };
+    const stopRecords = onSnapshot(recordsCol(), (snapshot) => {
+      if (recordsReady) notify(snapshot, 'records');
+      recordsReady = true;
+    });
+    const stopVehicle = onSnapshot(vehicleDoc(), (snapshot) => {
+      if (vehicleReady) notify(snapshot, 'vehicle');
+      vehicleReady = true;
+    });
+    return () => {
+      stopRecords();
+      stopVehicle();
+    };
   },
 };
