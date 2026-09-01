@@ -1,5 +1,6 @@
 import { DB } from '../db.js';
-import { money, km, fmtDate, todayISO, TYPE_LABELS, downloadFile } from '../utils.js';
+import { money, km, fmtDate, todayISO, localDateISO, TYPE_LABELS, downloadFile, escapeHTML } from '../utils.js';
+import { icon } from '../icons.js';
 
 const PERIODS = [
   { value: 'month', label: 'Ce mois-ci' },
@@ -15,12 +16,12 @@ let customEnd = '';
 function periodRange(period) {
   const now = new Date();
   if (period === 'month') {
-    const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    const start = localDateISO(new Date(now.getFullYear(), now.getMonth(), 1));
     const end = todayISO();
     return { start, end };
   }
   if (period === 'year') {
-    const start = new Date(now.getFullYear(), 0, 1).toISOString().slice(0, 10);
+    const start = localDateISO(new Date(now.getFullYear(), 0, 1));
     const end = todayISO();
     return { start, end };
   }
@@ -85,8 +86,8 @@ export async function renderReports(container) {
     </div>
 
     <div class="report-actions">
-      <button class="btn-primary" id="btn-print">📄 Générer le rapport imprimable</button>
-      <button class="btn-secondary" id="btn-csv">⬇️ Exporter en CSV</button>
+      <button class="btn-primary" id="btn-print">${icon('printer')} Générer le rapport imprimable</button>
+      <button class="btn-secondary" id="btn-csv">${icon('download')} Exporter en CSV</button>
     </div>
   `;
 
@@ -120,7 +121,7 @@ function printReport(vehicle, records, start, end, totalCost, distance) {
   const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));
 
   printRoot.innerHTML = `
-    <h1>Rapport — ${vehicleName}</h1>
+    <h1>Rapport — ${escapeHTML(vehicleName)}</h1>
     <p>Période : ${fmtDate(start)} au ${fmtDate(end)}</p>
     <p><strong>Total investi :</strong> ${money(totalCost)} &nbsp; <strong>Distance parcourue :</strong> ${distance !== null ? km(distance) : '—'}</p>
     <table>
@@ -131,8 +132,8 @@ function printReport(vehicle, records, start, end, totalCost, distance) {
         ${sorted.map((r) => `
           <tr>
             <td>${fmtDate(r.date)}</td>
-            <td>${TYPE_LABELS[r.type] || r.type}</td>
-            <td>${descriptionFor(r)}</td>
+            <td>${escapeHTML(TYPE_LABELS[r.type] || r.type)}</td>
+            <td>${escapeHTML(descriptionFor(r))}</td>
             <td>${typeof r.odometer === 'number' ? r.odometer.toLocaleString('fr-CA') : ''}</td>
             <td>${r.cost ? money(r.cost) : ''}</td>
           </tr>
@@ -143,8 +144,12 @@ function printReport(vehicle, records, start, end, totalCost, distance) {
   `;
 
   document.body.classList.add('printing');
+  // afterprint est déclenché après l'impression ou son annulation, ce qui
+  // évite de restaurer l'écran avant que la fenêtre d'impression soit prête.
+  window.addEventListener('afterprint', () => {
+    document.body.classList.remove('printing');
+  }, { once: true });
   window.print();
-  setTimeout(() => document.body.classList.remove('printing'), 500);
 }
 
 function exportCSV(records, start, end) {
@@ -158,11 +163,12 @@ function exportCSV(records, start, end) {
     r.liters ?? '',
     r.category || '',
     r.vendor || '',
-    (r.notes || '').replace(/\n/g, ' '),
+    (r.notes || '').replace(/\r?\n/g, ' '),
   ]);
   const csv = [headers, ...rows]
-    .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    // Le point-virgule est le séparateur reconnu par Excel en français.
+    .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(';'))
     .join('\r\n');
   const filename = `carnet-van_${start}_${end}.csv`;
-  downloadFile(filename, '﻿' + csv, 'text/csv;charset=utf-8');
+  downloadFile(filename, '\uFEFF' + csv, 'text/csv;charset=utf-8');
 }

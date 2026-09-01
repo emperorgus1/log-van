@@ -1,5 +1,6 @@
 import { DB } from '../db.js';
-import { fmtDate, todayISO, openModal, closeModal, toast, escapeHTML } from '../utils.js';
+import { fmtDate, todayISO, openModal, closeModal, toast, escapeHTML, validateDateField } from '../utils.js';
+import { icon } from '../icons.js';
 import { resolveLocation, getCurrentPosition, googleMapsUrl, drivingDistanceKm } from '../geo.js';
 
 let activeTab = 'list';
@@ -29,7 +30,7 @@ export async function renderPlaces(container) {
   container.innerHTML = `
     <div class="view-header">
       <h1>Endroits visités</h1>
-      <button class="icon-btn" id="btn-add">➕</button>
+      <button class="icon-btn" id="btn-add" aria-label="Ajouter un endroit">${icon('plus')}</button>
     </div>
     <div class="chip-row">
       <button class="chip${activeTab === 'list' ? ' active' : ''}" data-tab="list">Liste</button>
@@ -72,8 +73,8 @@ function row(r) {
   const sub = [fmtDate(r.date), locLabel, distanceLabel].filter(Boolean).join(' · ');
   const badge = typeof r.lat !== 'number' ? '<div class="record-badge">non localisé</div>' : '';
   return `
-    <div class="record-row" data-id="${r.id}">
-      <div class="record-icon">📍</div>
+    <div class="record-row" data-id="${escapeHTML(r.id)}">
+      <div class="record-icon">${icon('pin')}</div>
       <div class="record-main">
         <div class="record-title">${escapeHTML(r.name)} ${badge}</div>
         <div class="record-sub">${escapeHTML(sub)}</div>
@@ -125,7 +126,7 @@ async function renderMap(body, sorted, onDone) {
       <strong>${escapeHTML(r.name)}</strong><br>
       ${escapeHTML(fmtDate(r.date))}
       ${r.notes ? `<br>${escapeHTML(truncate(r.notes, 80))}` : ''}
-      <br><a href="#" class="popup-edit" data-id="${r.id}">Modifier</a>
+      <br><a href="#" class="popup-edit" data-id="${escapeHTML(r.id)}">Modifier</a>
     `);
   });
 
@@ -138,19 +139,19 @@ function openForm(existing, onDone) {
   const content = openModal(`
     <div class="modal-header">
       <h2>${existing ? "Modifier l'endroit" : 'Nouvel endroit'}</h2>
-      <button class="icon-btn" id="modal-close">✕</button>
+      <button class="icon-btn" id="modal-close" aria-label="Fermer la fenêtre">${icon('close')}</button>
     </div>
     <form id="place-form" class="form">
       <label>Nom
         <input type="text" name="name" value="${existing ? escapeHTML(existing.name) : ''}" placeholder="ex: Camping du Lac Bleu" required />
       </label>
       <label>Date
-        <input type="date" name="date" value="${existing?.date || todayISO()}" required />
+        <input type="date" name="date" value="${escapeHTML(existing?.date || todayISO())}" required />
       </label>
       <label>Localisation
         <div class="location-row">
           <input type="text" name="locationText" value="${existing ? escapeHTML(existing.locationText || '') : ''}" placeholder="Adresse, lien Google Maps ou coordonnées GPS" />
-          <button type="button" id="btn-locate" class="icon-btn" title="Utiliser ma position actuelle">📍</button>
+          <button type="button" id="btn-locate" class="icon-btn" title="Utiliser ma position actuelle" aria-label="Utiliser ma position actuelle">${icon('locate')}</button>
         </div>
         <span class="field-hint">Astuce : colle le lien complet de Google Maps (pas un lien court maps.app.goo.gl).</span>
       </label>
@@ -170,7 +171,7 @@ function openForm(existing, onDone) {
   document.getElementById('btn-locate').addEventListener('click', async (e) => {
     const btn = e.currentTarget;
     btn.disabled = true;
-    btn.textContent = '⏳';
+    btn.innerHTML = icon('spinner', 'ui-icon-spin');
     try {
       const { lat, lng } = await getCurrentPosition();
       content.querySelector('[name="locationText"]').value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
@@ -178,58 +179,76 @@ function openForm(existing, onDone) {
       toast("Impossible d'obtenir ta position.");
     } finally {
       btn.disabled = false;
-      btn.textContent = '📍';
+      btn.innerHTML = icon('locate');
     }
   });
 
   document.getElementById('place-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const form = e.target;
+    if (!validateDateField(form, 'date', { label: 'La date', required: true, max: todayISO() })) {
+      form.reportValidity();
+      return;
+    }
+    const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Localisation…';
-    const fd = new FormData(e.target);
-    const locationInput = fd.get('locationText')?.trim() || '';
-    const resolved = await resolveLocation(locationInput);
+    try {
+      const fd = new FormData(form);
+      const locationInput = fd.get('locationText')?.trim() || '';
+      const resolved = await resolveLocation(locationInput);
 
-    let distanceFromHomeKm = null;
-    if (resolved.lat != null) {
-      const vehicle = await DB.getVehicle();
-      if (vehicle && typeof vehicle.homeLat === 'number') {
-        distanceFromHomeKm = await drivingDistanceKm(
-          { lat: vehicle.homeLat, lng: vehicle.homeLng },
-          { lat: resolved.lat, lng: resolved.lng }
-        );
+      let distanceFromHomeKm = null;
+      if (resolved.lat != null) {
+        const vehicle = await DB.getVehicle();
+        if (vehicle && typeof vehicle.homeLat === 'number') {
+          distanceFromHomeKm = await drivingDistanceKm(
+            { lat: vehicle.homeLat, lng: vehicle.homeLng },
+            { lat: resolved.lat, lng: resolved.lng }
+          );
+        }
       }
+      const record = {
+        type: 'place',
+        name: fd.get('name')?.trim() || '',
+        date: fd.get('date'),
+        notes: fd.get('notes')?.trim() || '',
+        locationText: resolved.locationText,
+        lat: resolved.lat,
+        lng: resolved.lng,
+        locationSource: resolved.source,
+        distanceFromHomeKm,
+      };
+      if (existing) {
+        record.id = existing.id;
+        await DB.updateRecord(record);
+      } else {
+        await DB.addRecord(record);
+      }
+      closeModal();
+      toast(locationInput && resolved.lat == null ? 'Endroit enregistré (localisation introuvable)' : 'Endroit enregistré');
+      onDone();
+    } catch (err) {
+      console.error("Enregistrement de l'endroit échoué :", err);
+      toast("Impossible d'enregistrer l'endroit. Réessaie.");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Enregistrer';
     }
-
-    const record = {
-      type: 'place',
-      name: fd.get('name')?.trim() || '',
-      date: fd.get('date'),
-      notes: fd.get('notes')?.trim() || '',
-      locationText: resolved.locationText,
-      lat: resolved.lat,
-      lng: resolved.lng,
-      locationSource: resolved.source,
-      distanceFromHomeKm,
-    };
-    if (existing) {
-      record.id = existing.id;
-      await DB.updateRecord(record);
-    } else {
-      await DB.addRecord(record);
-    }
-    closeModal();
-    toast(locationInput && resolved.lat == null ? 'Endroit enregistré (localisation introuvable)' : 'Endroit enregistré');
-    onDone();
   });
 
   if (existing) {
     document.getElementById('btn-delete').addEventListener('click', async () => {
-      await DB.deleteRecord(existing.id);
-      closeModal();
-      toast('Endroit supprimé');
-      onDone();
+      if (!window.confirm('Supprimer cet endroit ? Cette action est irréversible.')) return;
+      try {
+        await DB.deleteRecord(existing.id);
+        closeModal();
+        toast('Endroit supprimé');
+        onDone();
+      } catch (err) {
+        console.error("Suppression de l'endroit échouée :", err);
+        toast("Impossible de supprimer l'endroit. Réessaie.");
+      }
     });
   }
 }
