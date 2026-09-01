@@ -15,10 +15,26 @@ const routes = {
 
 const view = document.getElementById('view');
 const nav = document.getElementById('bottom-nav');
+const connectionStatus = document.getElementById('connection-status');
+
+function updateConnectionStatus() {
+  const offline = !navigator.onLine;
+  connectionStatus.hidden = !offline;
+  connectionStatus.textContent = offline
+    ? 'Hors ligne — les données déjà chargées restent disponibles. Les nouvelles modifications seront synchronisées au retour de la connexion.'
+    : '';
+}
+
+window.addEventListener('online', () => {
+  updateConnectionStatus();
+  toast('Connexion rétablie.');
+});
+window.addEventListener('offline', updateConnectionStatus);
+updateConnectionStatus();
 
 function buildNav(active) {
   nav.innerHTML = Object.entries(routes).map(([key, r]) => `
-    <button class="nav-item${key === active ? ' active' : ''}" data-route="${key}">
+    <button class="nav-item${key === active ? ' active' : ''}" data-route="${key}" aria-label="${r.label}">
       <span class="nav-icon">${r.icon}</span>
       <span class="nav-label">${r.label}</span>
     </button>

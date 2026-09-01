@@ -1,4 +1,4 @@
-const CACHE_NAME = 'carnet-van-v9';
+const CACHE_NAME = 'carnet-van-v10';
 const ASSETS = [
   './',
   './index.html',
@@ -22,6 +22,12 @@ const ASSETS = [
   './icons/icon-180.png',
   './icons/icon-192-maskable.png',
   './icons/icon-512-maskable.png',
+  // Firebase est indispensable au démarrage, même si les données sont déjà
+  // conservées localement par Firestore.
+  'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js',
+  'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js',
+  'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js',
+  'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js',
 ];
 
 self.addEventListener('install', (event) => {
@@ -46,12 +52,20 @@ self.addEventListener('activate', (event) => {
 // "réseau" pouvait quand même être satisfait par ce cache-là pendant 10 min.
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+  // Les modules Firebase mis en cache sont nécessaires pour démarrer hors
+  // ligne. Les autres services externes restent des requêtes réseau afin de
+  // ne pas servir de données de carte ou de localisation périmées.
+  if (url.origin === 'https://www.gstatic.com' && url.pathname.startsWith('/firebasejs/10.12.2/')) {
+    event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request)));
+    return;
+  }
   // Ne pas intercepter les requêtes vers des services externes (Nominatim,
   // OpenRouteService, Firebase, tuiles OpenStreetMap, etc.) — les reconstruire
   // ici leur faisait perdre leurs en-têtes (ex. la clé d'API), ce qui les
   // faisait échouer avec une erreur CORS trompeuse. Seuls nos propres
   // fichiers passent par le cache.
-  if (new URL(event.request.url).origin !== self.location.origin) return;
+  if (url.origin !== self.location.origin) return;
   event.respondWith(
     fetch(event.request.url, { cache: 'no-store' })
       .then((networkResponse) => {

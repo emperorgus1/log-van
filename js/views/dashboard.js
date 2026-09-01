@@ -66,8 +66,8 @@ export async function renderDashboard(container) {
     <div class="view-header">
       <h1>${vehicle && vehicle.nickname ? escapeName(vehicle.nickname) : 'Ma van'}</h1>
       <div class="header-actions">
-        <button class="icon-btn" id="btn-settings" title="Profil du véhicule">⚙️</button>
-        <button class="icon-btn" id="btn-signout" title="Déconnexion">🚪</button>
+        <button class="icon-btn" id="btn-settings" title="Profil du véhicule" aria-label="Ouvrir le profil du véhicule">⚙️</button>
+        <button class="icon-btn" id="btn-signout" title="Déconnexion" aria-label="Se déconnecter">🚪</button>
       </div>
     </div>
 

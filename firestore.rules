@@ -18,6 +18,10 @@ service cloud.firestore {
       return !(field in data) || validText(data[field], maxLength);
     }
 
+    function optionalNullableText(data, field, maxLength) {
+      return !(field in data) || data[field] == null || validText(data[field], maxLength);
+    }
+
     function optionalNumber(data, field, min, max) {
       return !(field in data) || (data[field] is number
         && data[field] >= min && data[field] <= max);
@@ -45,9 +49,9 @@ service cloud.firestore {
         && data.keys().hasAll(['type', 'date'])
         && data.type in ['fuel', 'odometer', 'place', 'maintenance', 'part', 'renovation']
         && validDate(data.date)
-        && optionalNumber(data, 'odometer', 0, 2000000)
-        && optionalNumber(data, 'liters', 0, 10000)
-        && optionalNumber(data, 'cost', 0, 1000000)
+        && optionalNullableNumber(data, 'odometer', 0, 2000000)
+        && optionalNullableNumber(data, 'liters', 0, 10000)
+        && optionalNullableNumber(data, 'cost', 0, 1000000)
         && optionalBoolean(data, 'fullTank')
         && optionalText(data, 'notes', 5000)
         && optionalText(data, 'description', 500)
@@ -55,7 +59,7 @@ service cloud.firestore {
         && optionalText(data, 'vendor', 200)
         && optionalText(data, 'name', 300)
         && optionalText(data, 'locationText', 1000)
-        && optionalText(data, 'locationSource', 50)
+        && optionalNullableText(data, 'locationSource', 50)
         && optionalNullableNumber(data, 'lat', -90, 90)
         && optionalNullableNumber(data, 'lng', -180, 180)
         && optionalNullableNumber(data, 'distanceFromHomeKm', 0, 100000)
@@ -73,10 +77,10 @@ service cloud.firestore {
         && optionalText(data, 'nickname', 100)
         && optionalText(data, 'make', 100)
         && optionalText(data, 'model', 100)
-        && optionalNumber(data, 'year', 1886, 2100)
+        && optionalNullableNumber(data, 'year', 1886, 2100)
         && (!(('purchaseDate') in data) || data.purchaseDate == '' || validDate(data.purchaseDate))
-        && optionalNumber(data, 'purchaseOdometer', 0, 2000000)
-        && optionalNumber(data, 'purchasePrice', 0, 10000000)
+        && optionalNullableNumber(data, 'purchaseOdometer', 0, 2000000)
+        && optionalNullableNumber(data, 'purchasePrice', 0, 10000000)
         && optionalText(data, 'homeLocationText', 1000)
         && optionalNullableNumber(data, 'homeLat', -90, 90)
         && optionalNullableNumber(data, 'homeLng', -180, 180);

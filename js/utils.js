@@ -128,19 +128,62 @@ export function toast(msg) {
   }, 2200);
 }
 
+let previouslyFocusedElement = null;
+
+function getModalFocusableElements() {
+  return [...document.querySelectorAll(
+    '#modal-overlay .modal button:not([disabled]), #modal-overlay .modal [href], #modal-overlay .modal input:not([disabled]), #modal-overlay .modal select:not([disabled]), #modal-overlay .modal textarea:not([disabled])'
+  )];
+}
+
 export function openModal(innerHTML) {
   const overlay = document.getElementById('modal-overlay');
   const content = document.getElementById('modal-content');
+  const modal = overlay.querySelector('.modal');
+  previouslyFocusedElement = document.activeElement;
   content.innerHTML = innerHTML;
+  const title = content.querySelector('h2');
+  if (title) title.id = 'modal-title';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', 'modal-title');
+  modal.setAttribute('tabindex', '-1');
+  overlay.setAttribute('aria-hidden', 'false');
   overlay.classList.add('open');
+  requestAnimationFrame(() => (getModalFocusableElements()[0] || modal).focus());
   return content;
 }
 
 export function closeModal() {
   const overlay = document.getElementById('modal-overlay');
   overlay.classList.remove('open');
+  overlay.setAttribute('aria-hidden', 'true');
   document.getElementById('modal-content').innerHTML = '';
+  if (previouslyFocusedElement?.isConnected) previouslyFocusedElement.focus();
+  previouslyFocusedElement = null;
 }
+
+document.addEventListener('keydown', (event) => {
+  const overlay = document.getElementById('modal-overlay');
+  if (!overlay.classList.contains('open')) return;
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeModal();
+    return;
+  }
+  if (event.key !== 'Tab') return;
+  const focusable = getModalFocusableElements();
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+});
 
 export function downloadFile(filename, content, mime) {
   const blob = new Blob([content], { type: mime });

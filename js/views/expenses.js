@@ -20,7 +20,7 @@ export async function renderExpenses(container) {
   container.innerHTML = `
     <div class="view-header">
       <h1>Entretien & pièces</h1>
-      <button class="icon-btn" id="btn-add">➕</button>
+      <button class="icon-btn" id="btn-add" aria-label="Ajouter une dépense">➕</button>
     </div>
     <div class="chip-row">
       ${chip('all', 'Tout')}
@@ -81,7 +81,7 @@ function openForm(existing, onDone) {
   const content = openModal(`
     <div class="modal-header">
       <h2>${existing ? 'Modifier la dépense' : 'Nouvelle dépense'}</h2>
-      <button class="icon-btn" id="modal-close">✕</button>
+      <button class="icon-btn" id="modal-close" aria-label="Fermer la fenêtre">✕</button>
     </div>
     <form id="exp-form" class="form">
       <label>Type
@@ -128,7 +128,7 @@ function openForm(existing, onDone) {
         ${a.type?.startsWith('image/') ? `<img class="attach-thumb" src="${escapeHTML(safeAttachmentUrl(a.url))}" alt="" />` : '<div class="attach-thumb attach-thumb-file">📄</div>'}
         <a class="attach-name" href="${escapeHTML(safeAttachmentUrl(a.url))}" target="_blank" rel="noopener">${escapeHTML(a.name)}</a>
         <span class="attach-size">${fileSize(a.size || 0)}</span>
-        <button type="button" class="attach-remove" data-path="${escapeHTML(a.path)}">✕</button>
+        <button type="button" class="attach-remove" data-path="${escapeHTML(a.path)}" aria-label="Retirer ${escapeHTML(a.name)}">✕</button>
       </div>
     `);
     const pendingItems = pendingFiles.map((p) => `
@@ -136,7 +136,7 @@ function openForm(existing, onDone) {
         ${p.file.type.startsWith('image/') ? `<img class="attach-thumb" src="${p.previewUrl}" alt="" />` : '<div class="attach-thumb attach-thumb-file">📄</div>'}
         <span class="attach-name">${escapeHTML(p.file.name)}</span>
         <span class="attach-size">${fileSize(p.file.size)} · à envoyer</span>
-        <button type="button" class="attach-remove" data-local-id="${p.localId}">✕</button>
+        <button type="button" class="attach-remove" data-local-id="${p.localId}" aria-label="Retirer ${escapeHTML(p.file.name)}">✕</button>
       </div>
     `);
     list.innerHTML = existingItems.join('') + pendingItems.join('');

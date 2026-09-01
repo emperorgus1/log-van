@@ -47,8 +47,8 @@ export async function renderFuel(container) {
     <div class="view-header">
       <h1>Essence</h1>
       <div class="header-actions">
-        <button class="icon-btn" id="btn-add-odo" title="Ajouter un relevé de kilométrage">🧭</button>
-        <button class="icon-btn" id="btn-add">➕</button>
+        <button class="icon-btn" id="btn-add-odo" title="Ajouter un relevé de kilométrage" aria-label="Ajouter un relevé de kilométrage">🧭</button>
+        <button class="icon-btn" id="btn-add" aria-label="Ajouter un plein d'essence">➕</button>
       </div>
     </div>
     <div class="chip-row">
@@ -146,7 +146,7 @@ function openForm(existing, onDone) {
   const content = openModal(`
     <div class="modal-header">
       <h2>${existing ? 'Modifier le plein' : 'Nouveau plein'}</h2>
-      <button class="icon-btn" id="modal-close">✕</button>
+      <button class="icon-btn" id="modal-close" aria-label="Fermer la fenêtre">✕</button>
     </div>
     <form id="fuel-form" class="form">
       <label>Date
@@ -243,7 +243,7 @@ function openOdometerForm(existing, onDone) {
   const content = openModal(`
     <div class="modal-header">
       <h2>${existing ? 'Modifier le relevé' : 'Nouveau relevé de kilométrage'}</h2>
-      <button class="icon-btn" id="modal-close">✕</button>
+      <button class="icon-btn" id="modal-close" aria-label="Fermer la fenêtre">✕</button>
     </div>
     <form id="odo-form" class="form">
       <label>Date

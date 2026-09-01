@@ -1,13 +1,13 @@
 import { DB } from '../db.js';
 import { openModal, closeModal, toast, escapeHTML, todayISO, validateDateField, validateNumberField } from '../utils.js';
-import { resolveLocation, getCurrentPosition } from '../geo.js';
+import { resolveLocation, getCurrentPosition, confirmLocationPrivacy, locationNeedsGeocoding } from '../geo.js';
 
 export async function openVehicleModal(onSaved) {
   const v = (await DB.getVehicle()) || {};
   const content = openModal(`
     <div class="modal-header">
       <h2>Profil du véhicule</h2>
-      <button class="icon-btn" id="modal-close">✕</button>
+      <button class="icon-btn" id="modal-close" aria-label="Fermer la fenêtre">✕</button>
     </div>
     <form id="vehicle-form" class="form">
       <label>Surnom de la van
@@ -34,7 +34,7 @@ export async function openVehicleModal(onSaved) {
       <label>Localisation de la maison
         <div class="location-row">
           <input type="text" name="homeLocationText" value="${escapeHTML(v.homeLocationText || '')}" placeholder="Adresse, lien Google Maps ou coordonnées GPS" />
-          <button type="button" id="btn-locate-home" class="icon-btn" title="Utiliser ma position actuelle">📍</button>
+          <button type="button" id="btn-locate-home" class="icon-btn" title="Utiliser ma position actuelle" aria-label="Utiliser ma position actuelle">📍</button>
         </div>
         <span class="field-hint">Utilisée pour calculer la distance de conduite jusqu'aux endroits visités.</span>
       </label>
@@ -77,6 +77,7 @@ export async function openVehicleModal(onSaved) {
     try {
       const fd = new FormData(form);
       const homeLocationInput = fd.get('homeLocationText')?.trim() || '';
+      if (!confirmLocationPrivacy({ geocoding: locationNeedsGeocoding(homeLocationInput) })) return;
       const resolvedHome = await resolveLocation(homeLocationInput);
       const data = {
         nickname: fd.get('nickname')?.trim() || '',

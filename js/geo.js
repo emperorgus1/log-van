@@ -2,6 +2,33 @@
 // coordonnées GPS) en coordonnées lat/lng. Le géocodage d'adresse passe par
 // Nominatim (OpenStreetMap) — gratuit, sans clé API.
 
+const GEOCODE_CACHE_KEY = 'vanlog_geocode_cache_v1';
+const LOCATION_NOTICE_KEY = 'vanlog_location_notice_seen';
+
+function geocodeCache() {
+  try {
+    return JSON.parse(localStorage.getItem(GEOCODE_CACHE_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function geocodeCacheKey(address) {
+  return address.trim().toLocaleLowerCase('fr-CA').replace(/\s+/g, ' ');
+}
+
+function saveGeocodedAddress(address, result) {
+  try {
+    const cache = geocodeCache();
+    cache[geocodeCacheKey(address)] = result;
+    // On conserve les 50 dernières adresses, uniquement sur cet appareil.
+    const recentEntries = Object.entries(cache).slice(-50);
+    localStorage.setItem(GEOCODE_CACHE_KEY, JSON.stringify(Object.fromEntries(recentEntries)));
+  } catch (err) {
+    console.warn('Mise en cache de la localisation échouée :', err);
+  }
+}
+
 function coordsIfValid(latStr, lngStr) {
   const lat = Number(latStr);
   const lng = Number(lngStr);
@@ -30,12 +57,35 @@ function extractCoordsFromText(text) {
 }
 
 export async function geocodeAddress(address) {
+  const cached = geocodeCache()[geocodeCacheKey(address)];
+  if (cached && typeof cached.lat === 'number' && typeof cached.lng === 'number') return cached;
   const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`;
   const res = await fetch(url);
   if (!res.ok) return null;
   const results = await res.json();
   if (!results.length) return null;
-  return { lat: Number(results[0].lat), lng: Number(results[0].lon) };
+  const result = { lat: Number(results[0].lat), lng: Number(results[0].lon) };
+  saveGeocodedAddress(address, result);
+  return result;
+}
+
+export function locationNeedsGeocoding(text) {
+  const trimmed = (text || '').trim();
+  return Boolean(trimmed) && !extractCoordsFromText(trimmed) && !/^https?:\/\//.test(trimmed);
+}
+
+// Affiché une seule fois, juste avant le premier envoi à un service de
+// localisation. Les coordonnées GPS saisies directement restent locales.
+export function confirmLocationPrivacy({ geocoding = false, routing = false } = {}) {
+  if ((!geocoding && !routing) || localStorage.getItem(LOCATION_NOTICE_KEY) === '1') return true;
+  const details = [];
+  if (geocoding) details.push('• L’adresse sera envoyée à Nominatim (OpenStreetMap) pour obtenir ses coordonnées.');
+  if (routing) details.push('• Les coordonnées seront envoyées à OpenRouteService pour calculer la distance routière.');
+  const accepted = window.confirm(
+    `Confidentialité de la localisation\n\n${details.join('\n')}\n\nAucune localisation n’est partagée si tu annules. Continuer ?`
+  );
+  if (accepted) localStorage.setItem(LOCATION_NOTICE_KEY, '1');
+  return accepted;
 }
 
 // Résout le texte saisi par l'utilisateur en { lat, lng, locationText, source }.

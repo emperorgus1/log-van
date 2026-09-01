@@ -1,6 +1,6 @@
 import { DB } from '../db.js';
 import { fmtDate, todayISO, openModal, closeModal, toast, escapeHTML, validateDateField } from '../utils.js';
-import { resolveLocation, getCurrentPosition, googleMapsUrl, drivingDistanceKm } from '../geo.js';
+import { resolveLocation, getCurrentPosition, googleMapsUrl, drivingDistanceKm, confirmLocationPrivacy, locationNeedsGeocoding } from '../geo.js';
 
 let activeTab = 'list';
 let leafletPromise = null;
@@ -29,7 +29,7 @@ export async function renderPlaces(container) {
   container.innerHTML = `
     <div class="view-header">
       <h1>Endroits visités</h1>
-      <button class="icon-btn" id="btn-add">➕</button>
+      <button class="icon-btn" id="btn-add" aria-label="Ajouter un endroit">➕</button>
     </div>
     <div class="chip-row">
       <button class="chip${activeTab === 'list' ? ' active' : ''}" data-tab="list">Liste</button>
@@ -138,7 +138,7 @@ function openForm(existing, onDone) {
   const content = openModal(`
     <div class="modal-header">
       <h2>${existing ? "Modifier l'endroit" : 'Nouvel endroit'}</h2>
-      <button class="icon-btn" id="modal-close">✕</button>
+      <button class="icon-btn" id="modal-close" aria-label="Fermer la fenêtre">✕</button>
     </div>
     <form id="place-form" class="form">
       <label>Nom
@@ -150,7 +150,7 @@ function openForm(existing, onDone) {
       <label>Localisation
         <div class="location-row">
           <input type="text" name="locationText" value="${existing ? escapeHTML(existing.locationText || '') : ''}" placeholder="Adresse, lien Google Maps ou coordonnées GPS" />
-          <button type="button" id="btn-locate" class="icon-btn" title="Utiliser ma position actuelle">📍</button>
+          <button type="button" id="btn-locate" class="icon-btn" title="Utiliser ma position actuelle" aria-label="Utiliser ma position actuelle">📍</button>
         </div>
         <span class="field-hint">Astuce : colle le lien complet de Google Maps (pas un lien court maps.app.goo.gl).</span>
       </label>
@@ -195,11 +195,13 @@ function openForm(existing, onDone) {
     try {
       const fd = new FormData(form);
       const locationInput = fd.get('locationText')?.trim() || '';
+      const vehicle = await DB.getVehicle();
+      const needsRouting = Boolean(locationInput && vehicle && typeof vehicle.homeLat === 'number');
+      if (!confirmLocationPrivacy({ geocoding: locationNeedsGeocoding(locationInput), routing: needsRouting })) return;
       const resolved = await resolveLocation(locationInput);
 
       let distanceFromHomeKm = null;
       if (resolved.lat != null) {
-        const vehicle = await DB.getVehicle();
         if (vehicle && typeof vehicle.homeLat === 'number') {
           distanceFromHomeKm = await drivingDistanceKm(
             { lat: vehicle.homeLat, lng: vehicle.homeLng },

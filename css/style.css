@@ -47,6 +47,16 @@ html, body {
   height: 100dvh;
 }
 
+.connection-status {
+  background: #fff3cd;
+  border-bottom: 1px solid #d7a523;
+  color: #5f4200;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  padding: 8px 16px;
+  text-align: center;
+}
+
 .view {
   flex: 1;
   overflow-y: auto;
@@ -80,6 +90,11 @@ html, body {
 }
 
 .icon-btn:active { transform: scale(0.94); }
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
 
 .stat-grid {
   display: grid;
@@ -571,4 +586,12 @@ body.printing .print-root {
   margin-top: 20px;
   font-size: 0.75rem;
   color: #666;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
