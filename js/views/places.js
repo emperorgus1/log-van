@@ -1,5 +1,6 @@
 import { DB } from '../db.js';
 import { fmtDate, todayISO, openModal, closeModal, toast, escapeHTML, validateDateField } from '../utils.js';
+import { icon } from '../icons.js';
 import { resolveLocation, getCurrentPosition, googleMapsUrl, drivingDistanceKm } from '../geo.js';
 
 let activeTab = 'list';
@@ -29,7 +30,7 @@ export async function renderPlaces(container) {
   container.innerHTML = `
     <div class="view-header">
       <h1>Endroits visités</h1>
-      <button class="icon-btn" id="btn-add" aria-label="Ajouter un endroit">➕</button>
+      <button class="icon-btn" id="btn-add" aria-label="Ajouter un endroit">${icon('plus')}</button>
     </div>
     <div class="chip-row">
       <button class="chip${activeTab === 'list' ? ' active' : ''}" data-tab="list">Liste</button>
@@ -73,7 +74,7 @@ function row(r) {
   const badge = typeof r.lat !== 'number' ? '<div class="record-badge">non localisé</div>' : '';
   return `
     <div class="record-row" data-id="${escapeHTML(r.id)}">
-      <div class="record-icon">📍</div>
+      <div class="record-icon">${icon('pin')}</div>
       <div class="record-main">
         <div class="record-title">${escapeHTML(r.name)} ${badge}</div>
         <div class="record-sub">${escapeHTML(sub)}</div>
@@ -138,7 +139,7 @@ function openForm(existing, onDone) {
   const content = openModal(`
     <div class="modal-header">
       <h2>${existing ? "Modifier l'endroit" : 'Nouvel endroit'}</h2>
-      <button class="icon-btn" id="modal-close" aria-label="Fermer la fenêtre">✕</button>
+      <button class="icon-btn" id="modal-close" aria-label="Fermer la fenêtre">${icon('close')}</button>
     </div>
     <form id="place-form" class="form">
       <label>Nom
@@ -150,7 +151,7 @@ function openForm(existing, onDone) {
       <label>Localisation
         <div class="location-row">
           <input type="text" name="locationText" value="${existing ? escapeHTML(existing.locationText || '') : ''}" placeholder="Adresse, lien Google Maps ou coordonnées GPS" />
-          <button type="button" id="btn-locate" class="icon-btn" title="Utiliser ma position actuelle" aria-label="Utiliser ma position actuelle">📍</button>
+          <button type="button" id="btn-locate" class="icon-btn" title="Utiliser ma position actuelle" aria-label="Utiliser ma position actuelle">${icon('locate')}</button>
         </div>
         <span class="field-hint">Astuce : colle le lien complet de Google Maps (pas un lien court maps.app.goo.gl).</span>
       </label>
@@ -170,7 +171,7 @@ function openForm(existing, onDone) {
   document.getElementById('btn-locate').addEventListener('click', async (e) => {
     const btn = e.currentTarget;
     btn.disabled = true;
-    btn.textContent = '⏳';
+    btn.innerHTML = icon('spinner', 'ui-icon-spin');
     try {
       const { lat, lng } = await getCurrentPosition();
       content.querySelector('[name="locationText"]').value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
@@ -178,7 +179,7 @@ function openForm(existing, onDone) {
       toast("Impossible d'obtenir ta position.");
     } finally {
       btn.disabled = false;
-      btn.textContent = '📍';
+      btn.innerHTML = icon('locate');
     }
   });
 

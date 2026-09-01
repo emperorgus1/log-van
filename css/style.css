@@ -91,6 +91,24 @@ html, body {
 
 .icon-btn:active { transform: scale(0.94); }
 
+.ui-icon {
+  width: 1.25em;
+  height: 1.25em;
+  display: inline-block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  vertical-align: -0.2em;
+}
+
+.icon-btn .ui-icon { vertical-align: middle; }
+.record-icon .ui-icon { width: 1.35em; height: 1.35em; }
+.attach-thumb-file .ui-icon { width: 1.1em; height: 1.1em; }
+.attach-remove .ui-icon { width: 1em; height: 1em; }
+
+@keyframes ui-icon-spin { to { transform: rotate(360deg); } }
+.ui-icon-spin { animation: ui-icon-spin 0.9s linear infinite; }
+
 :focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 3px;
@@ -444,7 +462,8 @@ html, body {
 
 .nav-item.active { color: var(--primary); }
 
-.nav-icon { font-size: 1.25rem; }
+.nav-icon { font-size: 1.25rem; line-height: 1; }
+.nav-icon .ui-icon { width: 1.25rem; height: 1.25rem; vertical-align: 0; }
 .nav-label { font-size: 0.66rem; }
 
 /* Forms */

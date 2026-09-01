@@ -2,6 +2,7 @@ import { DB } from '../db.js';
 import { money, km, fmtDate, TYPE_ICONS, toast } from '../utils.js';
 import { auth, signOut } from '../firebase.js';
 import { hasLegacyData, migrateLegacyData } from '../migrate.js';
+import { icon } from '../icons.js';
 
 function computeCurrentOdometer(records, vehicle) {
   const readings = records.map((r) => r.odometer).filter((v) => typeof v === 'number');
@@ -68,8 +69,8 @@ export async function renderDashboard(container) {
     <div class="view-header">
       <h1>${vehicle && vehicle.nickname ? escapeName(vehicle.nickname) : 'Ma van'}</h1>
       <div class="header-actions">
-        <button class="icon-btn" id="btn-settings" title="Profil du véhicule" aria-label="Ouvrir le profil du véhicule">⚙️</button>
-        <button class="icon-btn" id="btn-signout" title="Déconnexion" aria-label="Se déconnecter">🚪</button>
+        <button class="icon-btn" id="btn-settings" title="Profil du véhicule" aria-label="Ouvrir le profil du véhicule">${icon('settings')}</button>
+        <button class="icon-btn" id="btn-signout" title="Déconnexion" aria-label="Se déconnecter">${icon('logout')}</button>
       </div>
     </div>
 

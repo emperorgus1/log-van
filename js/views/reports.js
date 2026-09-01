@@ -1,5 +1,6 @@
 import { DB } from '../db.js';
 import { money, km, fmtDate, todayISO, localDateISO, TYPE_LABELS, downloadFile, escapeHTML } from '../utils.js';
+import { icon } from '../icons.js';
 
 const PERIODS = [
   { value: 'month', label: 'Ce mois-ci' },
@@ -85,8 +86,8 @@ export async function renderReports(container) {
     </div>
 
     <div class="report-actions">
-      <button class="btn-primary" id="btn-print">📄 Générer le rapport imprimable</button>
-      <button class="btn-secondary" id="btn-csv">⬇️ Exporter en CSV</button>
+      <button class="btn-primary" id="btn-print">${icon('printer')} Générer le rapport imprimable</button>
+      <button class="btn-secondary" id="btn-csv">${icon('download')} Exporter en CSV</button>
     </div>
   `;
 

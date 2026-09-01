@@ -1,5 +1,6 @@
 import { DB } from '../db.js';
 import { money, km, fmtDate, todayISO, openModal, closeModal, toast, escapeHTML, validateDateField, validateNumberField } from '../utils.js';
+import { icon } from '../icons.js';
 
 let activeTab = 'fuel';
 
@@ -51,8 +52,8 @@ export async function renderFuel(container) {
     <div class="view-header">
       <h1>Essence</h1>
       <div class="header-actions">
-        <button class="icon-btn" id="btn-add-odo" title="Ajouter un relevé de kilométrage" aria-label="Ajouter un relevé de kilométrage">🧭</button>
-        <button class="icon-btn" id="btn-add" aria-label="Ajouter un plein d'essence">➕</button>
+        <button class="icon-btn" id="btn-add-odo" title="Ajouter un relevé de kilométrage" aria-label="Ajouter un relevé de kilométrage">${icon('gauge')}</button>
+        <button class="icon-btn" id="btn-add" aria-label="Ajouter un plein d'essence">${icon('plus')}</button>
       </div>
     </div>
     <div class="chip-row">
@@ -138,7 +139,7 @@ function row(r) {
   const consumptionIssue = r.consumptionIssue ? `<div class="record-sub">${r.consumptionIssue}</div>` : '';
   return `
     <div class="record-row" data-id="${escapeHTML(r.id)}">
-      <div class="record-icon">⛽</div>
+      <div class="record-icon">${icon('fuel')}</div>
       <div class="record-main">
         <div class="record-title">${r.fullTank ? 'Plein complet' : 'Plein partiel'} ${consumptionBadge}</div>
         <div class="record-sub">${sub}</div>
@@ -152,7 +153,7 @@ function row(r) {
 function odoRow(r) {
   return `
     <div class="record-row" data-id="${escapeHTML(r.id)}">
-      <div class="record-icon">🧭</div>
+      <div class="record-icon">${icon('gauge')}</div>
       <div class="record-main">
         <div class="record-title">${km(r.odometer)}</div>
         <div class="record-sub">${fmtDate(r.date)}${r.notes ? ' · ' + escapeHTML(r.notes) : ''}</div>
@@ -165,7 +166,7 @@ function openForm(existing, onDone) {
   const content = openModal(`
     <div class="modal-header">
       <h2>${existing ? 'Modifier le plein' : 'Nouveau plein'}</h2>
-      <button class="icon-btn" id="modal-close" aria-label="Fermer la fenêtre">✕</button>
+      <button class="icon-btn" id="modal-close" aria-label="Fermer la fenêtre">${icon('close')}</button>
     </div>
     <form id="fuel-form" class="form">
       <label>Date
@@ -262,7 +263,7 @@ function openOdometerForm(existing, onDone) {
   const content = openModal(`
     <div class="modal-header">
       <h2>${existing ? 'Modifier le relevé' : 'Nouveau relevé de kilométrage'}</h2>
-      <button class="icon-btn" id="modal-close" aria-label="Fermer la fenêtre">✕</button>
+      <button class="icon-btn" id="modal-close" aria-label="Fermer la fenêtre">${icon('close')}</button>
     </div>
     <form id="odo-form" class="form">
       <label>Date

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'carnet-van-v10';
+const CACHE_NAME = 'carnet-van-v11';
 const ASSETS = [
   './',
   './index.html',
@@ -9,6 +9,7 @@ const ASSETS = [
   './js/db.js',
   './js/firebase.js',
   './js/geo.js',
+  './js/icons.js',
   './js/migrate.js',
   './js/utils.js',
   './js/views/dashboard.js',
@@ -20,6 +21,7 @@ const ASSETS = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-180.png',
+  './icons/ui.svg',
   './icons/icon-192-maskable.png',
   './icons/icon-512-maskable.png',
   // Firebase est indispensable au démarrage, même si les données sont déjà

@@ -1,13 +1,14 @@
 import { DB } from '../db.js';
 import { openModal, closeModal, toast, escapeHTML, todayISO, validateDateField, validateNumberField } from '../utils.js';
 import { resolveLocation, getCurrentPosition } from '../geo.js';
+import { icon } from '../icons.js';
 
 export async function openVehicleModal(onSaved) {
   const v = (await DB.getVehicle()) || {};
   const content = openModal(`
     <div class="modal-header">
       <h2>Profil du véhicule</h2>
-      <button class="icon-btn" id="modal-close" aria-label="Fermer la fenêtre">✕</button>
+      <button class="icon-btn" id="modal-close" aria-label="Fermer la fenêtre">${icon('close')}</button>
     </div>
     <form id="vehicle-form" class="form">
       <label>Surnom de la van
@@ -34,7 +35,7 @@ export async function openVehicleModal(onSaved) {
       <label>Localisation de la maison
         <div class="location-row">
           <input type="text" name="homeLocationText" value="${escapeHTML(v.homeLocationText || '')}" placeholder="Adresse, lien Google Maps ou coordonnées GPS" />
-          <button type="button" id="btn-locate-home" class="icon-btn" title="Utiliser ma position actuelle" aria-label="Utiliser ma position actuelle">📍</button>
+          <button type="button" id="btn-locate-home" class="icon-btn" title="Utiliser ma position actuelle" aria-label="Utiliser ma position actuelle">${icon('locate')}</button>
         </div>
         <span class="field-hint">Utilisée pour calculer la distance de conduite jusqu'aux endroits visités.</span>
       </label>
@@ -47,7 +48,7 @@ export async function openVehicleModal(onSaved) {
   document.getElementById('btn-locate-home').addEventListener('click', async (e) => {
     const btn = e.currentTarget;
     btn.disabled = true;
-    btn.textContent = '⏳';
+    btn.innerHTML = icon('spinner', 'ui-icon-spin');
     try {
       const { lat, lng } = await getCurrentPosition();
       content.querySelector('[name="homeLocationText"]').value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
@@ -55,7 +56,7 @@ export async function openVehicleModal(onSaved) {
       toast("Impossible d'obtenir ta position.");
     } finally {
       btn.disabled = false;
-      btn.textContent = '📍';
+      btn.innerHTML = icon('locate');
     }
   });
 

@@ -5,13 +5,14 @@ import { renderPlaces } from './views/places.js';
 import { renderReports } from './views/reports.js';
 import { auth, provider, onAuthStateChanged, signInWithPopup } from './firebase.js';
 import { DB } from './db.js';
+import { icon } from './icons.js';
 
 const routes = {
-  dashboard: { render: renderDashboard, label: 'Accueil', icon: '🏠' },
-  fuel: { render: renderFuel, label: 'Essence', icon: '⛽' },
-  places: { render: renderPlaces, label: 'Endroits', icon: '📍' },
-  expenses: { render: renderExpenses, label: 'Entretien', icon: '🔧' },
-  reports: { render: renderReports, label: 'Rapports', icon: '📄' },
+  dashboard: { render: renderDashboard, label: 'Accueil', icon: icon('home') },
+  fuel: { render: renderFuel, label: 'Essence', icon: icon('fuel') },
+  places: { render: renderPlaces, label: 'Endroits', icon: icon('pin') },
+  expenses: { render: renderExpenses, label: 'Entretien', icon: icon('wrench') },
+  reports: { render: renderReports, label: 'Rapports', icon: icon('document') },
 };
 
 const view = document.getElementById('view');

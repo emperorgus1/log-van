@@ -37,12 +37,12 @@ export const TYPE_LABELS = {
 };
 
 export const TYPE_ICONS = {
-  odometer: '🧭',
-  fuel: '⛽',
-  maintenance: '🔧',
-  part: '🧩',
-  renovation: '🛠️',
-  place: '📍',
+  odometer: icon('gauge'),
+  fuel: icon('fuel'),
+  maintenance: icon('wrench'),
+  part: icon('package'),
+  renovation: icon('hammer'),
+  place: icon('pin'),
 };
 
 export function parseDecimal(str) {
@@ -203,3 +203,4 @@ export function downloadFile(filename, content, mime) {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
+import { icon } from './icons.js';

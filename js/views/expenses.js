@@ -1,5 +1,6 @@
 import { DB } from '../db.js';
 import { money, km, fmtDate, todayISO, TYPE_ICONS, openModal, closeModal, toast, escapeHTML, validateDateField, validateNumberField } from '../utils.js';
+import { icon } from '../icons.js';
 import { validateFile, uploadAttachment, deleteAttachment } from '../attachments.js';
 
 const TYPES = [
@@ -20,7 +21,7 @@ export async function renderExpenses(container) {
   container.innerHTML = `
     <div class="view-header">
       <h1>Entretien & pièces</h1>
-      <button class="icon-btn" id="btn-add" aria-label="Ajouter une dépense">➕</button>
+      <button class="icon-btn" id="btn-add" aria-label="Ajouter une dépense">${icon('plus')}</button>
     </div>
     <div class="chip-row">
       ${chip('all', 'Tout')}
@@ -81,7 +82,7 @@ function openForm(existing, onDone) {
   const content = openModal(`
     <div class="modal-header">
       <h2>${existing ? 'Modifier la dépense' : 'Nouvelle dépense'}</h2>
-      <button class="icon-btn" id="modal-close" aria-label="Fermer la fenêtre">✕</button>
+      <button class="icon-btn" id="modal-close" aria-label="Fermer la fenêtre">${icon('close')}</button>
     </div>
     <form id="exp-form" class="form">
       <label>Type
@@ -125,18 +126,18 @@ function openForm(existing, onDone) {
     const list = content.querySelector('#attach-list');
     const existingItems = existingAttachments.map((a) => `
       <div class="attach-item" data-kind="existing" data-path="${escapeHTML(a.path)}">
-        ${a.type?.startsWith('image/') ? `<img class="attach-thumb" src="${escapeHTML(safeAttachmentUrl(a.url))}" alt="" />` : '<div class="attach-thumb attach-thumb-file">📄</div>'}
+        ${a.type?.startsWith('image/') ? `<img class="attach-thumb" src="${escapeHTML(safeAttachmentUrl(a.url))}" alt="" />` : `<div class="attach-thumb attach-thumb-file">${icon('document')}</div>`}
         <a class="attach-name" href="${escapeHTML(safeAttachmentUrl(a.url))}" target="_blank" rel="noopener">${escapeHTML(a.name)}</a>
         <span class="attach-size">${fileSize(a.size || 0)}</span>
-        <button type="button" class="attach-remove" data-path="${escapeHTML(a.path)}" aria-label="Retirer ${escapeHTML(a.name)}">✕</button>
+        <button type="button" class="attach-remove" data-path="${escapeHTML(a.path)}" aria-label="Retirer ${escapeHTML(a.name)}">${icon('close')}</button>
       </div>
     `);
     const pendingItems = pendingFiles.map((p) => `
       <div class="attach-item" data-kind="pending" data-local-id="${p.localId}">
-        ${p.file.type.startsWith('image/') ? `<img class="attach-thumb" src="${p.previewUrl}" alt="" />` : '<div class="attach-thumb attach-thumb-file">📄</div>'}
+        ${p.file.type.startsWith('image/') ? `<img class="attach-thumb" src="${p.previewUrl}" alt="" />` : `<div class="attach-thumb attach-thumb-file">${icon('document')}</div>`}
         <span class="attach-name">${escapeHTML(p.file.name)}</span>
         <span class="attach-size">${fileSize(p.file.size)} · à envoyer</span>
-        <button type="button" class="attach-remove" data-local-id="${p.localId}" aria-label="Retirer ${escapeHTML(p.file.name)}">✕</button>
+        <button type="button" class="attach-remove" data-local-id="${p.localId}" aria-label="Retirer ${escapeHTML(p.file.name)}">${icon('close')}</button>
       </div>
     `);
     list.innerHTML = existingItems.join('') + pendingItems.join('');
