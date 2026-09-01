@@ -105,6 +105,22 @@ html, body {
 
 .stat-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
 
+.dashboard-primary,
+.dashboard-secondary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.dashboard-primary { margin-bottom: 10px; }
+.dashboard-secondary { margin-bottom: 20px; }
+
+.stat-card-hero {
+  grid-column: 1 / -1;
+  background: var(--surface-2);
+  border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
+}
+
 .stat-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -131,6 +147,89 @@ html, body {
   font-size: 1rem;
   color: var(--text-muted);
   margin: 20px 0 10px;
+}
+
+.dashboard-insights { margin-bottom: 20px; }
+
+.chart-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.dashboard-chart {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  min-width: 0;
+}
+
+.dashboard-chart h3 {
+  font-size: 0.9rem;
+  margin: 0 0 12px;
+}
+
+.chart-columns {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+  align-items: end;
+  min-height: 138px;
+}
+
+.chart-column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.chart-value {
+  color: var(--text-muted);
+  font-size: 0.62rem;
+  line-height: 1.1;
+  min-height: 2.2em;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.chart-bar-track {
+  background: var(--surface-2);
+  border-radius: 5px 5px 2px 2px;
+  display: flex;
+  align-items: end;
+  height: 72px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.chart-bar {
+  background: var(--primary);
+  border-radius: 4px 4px 0 0;
+  height: var(--bar-height);
+  width: 100%;
+}
+
+.chart-label {
+  color: var(--text-muted);
+  font-size: 0.67rem;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.chart-empty {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  margin: 0;
+  min-height: 84px;
+}
+
+@media (min-width: 720px) {
+  .dashboard-primary { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .dashboard-primary .stat-card-hero { grid-column: span 2; }
+  .chart-grid { grid-template-columns: 1fr 1fr; }
 }
 
 .record-list {
