@@ -323,14 +323,15 @@ html, body {
 
 /* Bottom nav */
 .bottom-nav {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   border-top: 1px solid var(--border);
   background: var(--surface);
   padding-bottom: var(--safe-bottom);
 }
 
 .nav-item {
-  flex: 1;
+  min-width: 0;
   background: none;
   border: none;
   display: flex;
