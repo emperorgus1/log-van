@@ -80,19 +80,19 @@ Légende : **P1** = à faire en premier, **P2** = important, **P3** = améliorat
 
 ## Hors-ligne, confidentialité et accessibilité
 
-- [ ] **P1 — Rendre le mode hors-ligne fiable.**
+- [x] **P1 — Rendre le mode hors-ligne fiable.**
   - Vérifier le démarrage après une première visite sans Internet.
   - Mettre en cache les ressources nécessaires ou clarifier les limites du mode hors-ligne.
   - Ajouter un indicateur de connexion hors ligne.
   - Vérification : charger l'application, couper Internet, la fermer puis la rouvrir.
 
-- [ ] **P2 — Expliquer l'usage de la localisation.**
+- [ ] **P2 — Expliquer l'usage de la localisation (annulé).**
   - Informer que les adresses sont envoyées à Nominatim pour être converties en coordonnées.
   - Informer que les coordonnées peuvent être envoyées à OpenRouteService pour calculer une distance.
   - Mettre en cache les localisations déjà résolues.
   - Vérification : relire l'information avant la première utilisation d'une adresse.
 
-- [ ] **P2 — Améliorer l'accessibilité.**
+- [x] **P2 — Améliorer l'accessibilité.**
   - Ajouter des libellés accessibles aux boutons icônes.
   - Rendre les fenêtres modales utilisables au clavier et avec un lecteur d'écran.
   - Ajouter un indicateur de focus et respecter la réduction des animations.
@@ -121,3 +121,5 @@ Légende : **P1** = à faire en premier, **P2** = important, **P3** = améliorat
 | 2026-08-31 | Protection des textes, confirmations, validation et messages d'état | Test sur l'aperçu Netlify | Les quatre éléments ont été vérifiés. |
 | 2026-08-31 | Suppressions partielles et fichiers orphelins | Ajout puis suppression d'une pièce jointe et de sa dépense sur l'aperçu Netlify | Règles Firebase Storage publiées et fonctionnement confirmé. |
 | 2026-08-31 | Renforcement des règles Firebase | Règles Firestore et Storage publiées dans Firebase | Isolation par compte, validation des données et types de fichiers autorisés. |
+| 2026-08-31 | Mode hors-ligne et accessibilité | Vérification du chargement de l'aperçu Netlify | Mise en cache des ressources essentielles, indicateur hors ligne, navigation clavier et respect de la réduction des animations. |
+| 2026-08-31 | Usage de la localisation | Décision du propriétaire | Annulé : aucun avertissement ni cache supplémentaire pour les adresses. |
