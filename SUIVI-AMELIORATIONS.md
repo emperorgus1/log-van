@@ -109,7 +109,7 @@ Légende : **P1** = à faire en premier, **P2** = important, **P3** = améliorat
   - Évaluer le remplacement des emojis par des icônes stables si le rendu diffère trop selon l'appareil.
   - Vérification : comparer Android, iPhone et ordinateur lorsque possible.
 
-- [ ] **P2 — Ajouter des tests et de la documentation.**
+- [ ] **P2 — Ajouter des tests et de la documentation (annulé).**
   - Créer des tests pour les décimales, les dates, les calculs et le CSV.
   - Documenter le déploiement et la configuration Firebase.
   - Vérification : une nouvelle installation peut être déployée à partir du guide.
