@@ -22,7 +22,7 @@ Légende : **P1** = à faire en premier, **P2** = important, **P3** = améliorat
   - Demander une confirmation claire avant de supprimer une entrée ou ses documents.
   - Vérification : essayer de supprimer une entrée, annuler, puis vérifier qu'elle est toujours présente.
 
-- [ ] **P1 — Éviter les suppressions partielles et les fichiers orphelins.**
+- [x] **P1 — Éviter les suppressions partielles et les fichiers orphelins.**
   - Gérer les erreurs entre Firestore et Firebase Storage.
   - Nettoyer les fichiers téléversés si l'enregistrement de la fiche échoue.
   - Vérification : simuler un échec d'enregistrement et vérifier qu'aucun document inutile ne reste dans Storage.
@@ -119,3 +119,4 @@ Légende : **P1** = à faire en premier, **P2** = important, **P3** = améliorat
 | Date | Modification cochée | Vérification effectuée | Notes |
 | --- | --- | --- | --- |
 | 2026-08-31 | Protection des textes, confirmations, validation et messages d'état | Test sur l'aperçu Netlify | Les quatre éléments ont été vérifiés. |
+| 2026-08-31 | Suppressions partielles et fichiers orphelins | Ajout puis suppression d'une pièce jointe et de sa dépense sur l'aperçu Netlify | Règles Firebase Storage publiées et fonctionnement confirmé. |
