@@ -37,7 +37,7 @@ Légende : **P1** = à faire en premier, **P2** = important, **P3** = améliorat
   - Restreindre son usage ou son quota dans le service, si possible.
   - Vérification : la clé précédente ne fonctionne plus et le calcul de distance continue de fonctionner.
 
-- [ ] **P2 — Ajouter les protections d'hébergement.**
+- [x] **P2 — Ajouter les protections d'hébergement.**
   - Définir des en-têtes de sécurité adaptés à Netlify ou à l'hébergement choisi.
   - Limiter les sources externes autorisées sans bloquer Firebase, les cartes ou la connexion Google.
   - Vérification : l'application fonctionne après déploiement et les ressources non autorisées sont bloquées.
