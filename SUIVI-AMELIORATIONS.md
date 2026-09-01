@@ -32,7 +32,7 @@ Légende : **P1** = à faire en premier, **P2** = important, **P3** = améliorat
   - Ajouter la validation des champs attendus dans Firestore et du type de fichier dans Storage.
   - Vérification : publier les règles et vérifier qu'un fichier ou une donnée non conforme est refusé.
 
-- [ ] **P2 — Protéger l'utilisation d'OpenRouteService.**
+- [x] **P2 — Protéger l'utilisation d'OpenRouteService.**
   - Remplacer la clé actuellement visible dans le code.
   - Restreindre son usage ou son quota dans le service, si possible.
   - Vérification : la clé précédente ne fonctionne plus et le calcul de distance continue de fonctionner.
