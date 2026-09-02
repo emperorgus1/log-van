@@ -196,14 +196,20 @@ function openForm(existing, onDone) {
     const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
     const uploadedAttachments = [];
+    const failedUploads = [];
     try {
       const id = existing?.id || DB.newId();
 
       if (pendingFiles.length) {
         submitBtn.textContent = 'Envoi des documents…';
         for (const p of pendingFiles) {
-          const uploaded = await uploadAttachment(id, p.file);
-          uploadedAttachments.push(uploaded);
+          try {
+            const uploaded = await uploadAttachment(id, p.file);
+            uploadedAttachments.push(uploaded);
+          } catch (uploadError) {
+            console.warn(`Envoi de ${p.file.name} échoué :`, uploadError);
+            failedUploads.push(p.file.name);
+          }
         }
       }
 
@@ -248,7 +254,9 @@ function openForm(existing, onDone) {
           toast("Dépense enregistrée, mais vérifie les anciens documents joints.");
         }
       } else {
-        toast('Dépense enregistrée');
+        toast(failedUploads.length
+          ? `Dépense enregistrée, mais ${failedUploads.length} document(s) n'ont pas pu être envoyé(s).`
+          : 'Dépense enregistrée');
       }
       pendingFiles.forEach((p) => {
         if (p.previewUrl) URL.revokeObjectURL(p.previewUrl);
