@@ -208,6 +208,7 @@ function openForm(existing, onDone) {
       }
 
       const fd = new FormData(form);
+      const attachments = [...existingAttachments, ...uploadedAttachments];
       const record = {
         id,
         type: fd.get('type'),
@@ -218,8 +219,13 @@ function openForm(existing, onDone) {
         category: fd.get('category')?.trim() || '',
         vendor: fd.get('vendor')?.trim() || '',
         notes: fd.get('notes')?.trim() || '',
-        attachments: [...existingAttachments, ...uploadedAttachments],
       };
+      // Une liste vide n'apporte aucune information et peut être refusée si
+      // les règles Firestore publiées datent d'avant l'ajout des documents.
+      // On n'envoie donc ce champ optionnel que lorsqu'il contient un fichier.
+      // En modification, on conserve toutefois la liste vide pour permettre
+      // de retirer le dernier document d'une fiche existante.
+      if (attachments.length || existing?.attachments?.length) record.attachments = attachments;
       if (existing) {
         await DB.updateRecord(record);
       } else {
@@ -234,7 +240,7 @@ function openForm(existing, onDone) {
         try {
           await DB.updateRecord({
             ...record,
-            attachments: [...record.attachments, ...remainingAttachments],
+            attachments: [...(record.attachments || []), ...remainingAttachments],
           });
           toast("Dépense enregistrée, mais certains documents sont restés joints.");
         } catch (err) {
@@ -252,7 +258,10 @@ function openForm(existing, onDone) {
     } catch (err) {
       console.error("Enregistrement de la dépense échoué :", err);
       await Promise.all(uploadedAttachments.map((a) => deleteAttachment(a.path)));
-      toast("Impossible d'enregistrer la dépense. Réessaie.");
+      const message = err?.code === 'permission-denied'
+        ? "Firebase a refusé les données de la dépense. Vérifie que les règles Firestore sont à jour."
+        : "Impossible d'enregistrer la dépense. Réessaie.";
+      toast(message);
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Enregistrer';
