@@ -82,8 +82,8 @@ export async function renderDashboard(container) {
 
     <div class="dashboard-secondary">
       <div class="stat-card">
-        <div class="stat-label">Total investi</div>
-        <div class="stat-value">${money(totalInvested)}</div>
+        <div class="stat-label">Total investi (Essence)</div>
+        <div class="stat-value stat-value-sm">${money(totalInvested)} (${money(totalFuelCost)})</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Distance depuis l'achat</div>
