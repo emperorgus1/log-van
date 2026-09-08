@@ -1,4 +1,4 @@
-const CACHE_NAME = 'carnet-van-v18';
+const CACHE_NAME = 'carnet-van-v20';
 const ASSETS = [
   './',
   './index.html',

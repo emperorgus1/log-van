@@ -12,7 +12,7 @@ export async function renderFuel(container) {
 
   const byOdo = records.filter((r) => typeof r.odometer === 'number').sort((a, b) => a.odometer - b.odometer);
   const withConsumption = attachConsumption(byOdo);
-  const sorted = [...withConsumption].sort((a, b) => b.date.localeCompare(a.date));
+  const sorted = [...withConsumption].sort((a, b) => b.odometer - a.odometer);
   const sortedOdo = [...odoRecords].sort((a, b) => b.date.localeCompare(a.date));
 
   const totalCost = records.reduce((s, r) => s + (r.cost || 0), 0);
@@ -131,7 +131,10 @@ async function confirmOlderOdometer(odometer, recordId) {
 }
 
 function row(r) {
-  const sub = [fmtDate(r.date), typeof r.odometer === 'number' ? km(r.odometer) : null, r.liters ? r.liters.toFixed(1) + ' L' : null]
+  const unitPrice = typeof r.cost === 'number' && r.cost > 0 && typeof r.liters === 'number' && r.liters > 0
+    ? `(${(r.cost / r.liters).toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}$/L)`
+    : null;
+  const sub = [fmtDate(r.date), typeof r.odometer === 'number' ? km(r.odometer) : null, r.liters ? r.liters.toFixed(1) + ' L' : null, unitPrice]
     .filter(Boolean).join(' · ');
   const consumptionBadge = r.consumption ? `<div class="record-badge">${r.consumption.toFixed(1)} L/100km</div>` : '';
   const consumptionIssue = r.consumptionIssue ? `<div class="record-sub">${r.consumptionIssue}</div>` : '';
