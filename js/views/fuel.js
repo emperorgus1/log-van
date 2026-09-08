@@ -1,6 +1,7 @@
 import { DB } from '../db.js';
 import { money, km, fmtDate, todayISO, openModal, closeModal, toast, escapeHTML, validateDateField, validateNumberField } from '../utils.js';
 import { icon } from '../icons.js';
+import { latestConsumption, totalAverageConsumption } from '../fuel-consumption.js';
 
 let activeTab = 'fuel';
 
@@ -16,13 +17,14 @@ export async function renderFuel(container) {
 
   const totalCost = records.reduce((s, r) => s + (r.cost || 0), 0);
   const totalLiters = records.reduce((s, r) => s + (r.liters || 0), 0);
-  const avgConsumption = averageConsumption(withConsumption);
+  const avgConsumption = totalAverageConsumption(records);
+  const lastConsumption = latestConsumption(records);
   const consumptionHint = avgConsumption === null
     ? 'Ajoute deux pleins complets avec kilométrage pour calculer la consommation.'
     : '';
 
   const fuelSection = `
-    <div class="stat-grid stat-grid-3">
+    <div class="stat-grid">
       <div class="stat-card">
         <div class="stat-label">Total dépensé</div>
         <div class="stat-value stat-value-sm">${money(totalCost)}</div>
@@ -32,8 +34,12 @@ export async function renderFuel(container) {
         <div class="stat-value stat-value-sm">${totalLiters.toFixed(1)} L</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Conso. moy.</div>
+        <div class="stat-label">Consommation moyenne totale</div>
         <div class="stat-value stat-value-sm">${avgConsumption !== null ? avgConsumption.toFixed(1) + ' L/100km' : '—'}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Consommation moyenne depuis le dernier plein</div>
+        <div class="stat-value stat-value-sm">${lastConsumption !== null ? lastConsumption.toFixed(1) + ' L/100km' : '—'}</div>
       </div>
     </div>
     ${consumptionHint ? `<p class="field-hint">${consumptionHint}</p>` : ''}
@@ -110,14 +116,6 @@ function attachConsumption(sortedByOdo) {
     if (r.fullTank) lastFullIdx = i;
     return { ...r, consumption, consumptionDistance, consumptionLiters, consumptionIssue };
   });
-}
-
-function averageConsumption(withConsumption) {
-  const intervals = withConsumption.filter((r) => r.consumptionDistance !== null && r.consumptionLiters !== null);
-  if (!intervals.length) return null;
-  const distance = intervals.reduce((sum, r) => sum + r.consumptionDistance, 0);
-  const liters = intervals.reduce((sum, r) => sum + r.consumptionLiters, 0);
-  return distance > 0 && liters > 0 ? (liters / distance) * 100 : null;
 }
 
 async function confirmOlderOdometer(odometer, recordId) {

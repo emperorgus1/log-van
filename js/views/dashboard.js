@@ -3,6 +3,7 @@ import { money, km, fmtDate, TYPE_ICONS, toast } from '../utils.js';
 import { auth, signOut } from '../firebase.js';
 import { hasLegacyData, migrateLegacyData } from '../migrate.js';
 import { icon } from '../icons.js';
+import { fuelConsumptionIntervals, totalAverageConsumption } from '../fuel-consumption.js';
 
 function computeCurrentOdometer(records, vehicle) {
   const readings = records.map((r) => r.odometer).filter((v) => typeof v === 'number');
@@ -11,22 +12,6 @@ function computeCurrentOdometer(records, vehicle) {
   if (max === null) return purchase;
   if (purchase === null) return max;
   return Math.max(max, purchase);
-}
-
-function lastFuelConsumption(fuelRecords) {
-  const full = fuelRecords.filter((r) => typeof r.odometer === 'number').sort((a, b) => a.odometer - b.odometer);
-  const fullTankIdx = [];
-  full.forEach((r, i) => { if (r.fullTank) fullTankIdx.push(i); });
-  if (fullTankIdx.length < 2) return null;
-  const last = full[fullTankIdx[fullTankIdx.length - 1]];
-  const prevFull = full[fullTankIdx[fullTankIdx.length - 2]];
-  const distance = last.odometer - prevFull.odometer;
-  if (distance <= 0) return null;
-  // Somme des litres consommés entre les deux pleins (incluant les pleins partiels entre les deux)
-  const between = full.filter((r) => r.odometer > prevFull.odometer && r.odometer <= last.odometer);
-  const liters = between.reduce((sum, r) => sum + (r.liters || 0), 0);
-  if (liters <= 0) return null;
-  return (liters / distance) * 100;
 }
 
 export async function renderDashboard(container) {
@@ -52,7 +37,7 @@ export async function renderDashboard(container) {
   const totalInvested = records.reduce((sum, r) => sum + (r.cost || 0), 0);
   const fuelRecords = records.filter((r) => r.type === 'fuel');
   const totalFuelCost = fuelRecords.reduce((sum, r) => sum + (r.cost || 0), 0);
-  const consumption = lastFuelConsumption(fuelRecords);
+  const consumption = totalAverageConsumption(fuelRecords);
   const monthlyExpenses = expensesByMonth(records);
   const consumptionTrend = consumptionHistory(fuelRecords);
 
@@ -86,7 +71,7 @@ export async function renderDashboard(container) {
         <div class="stat-value">${money(totalFuelCost)}</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Consommation moy.</div>
+        <div class="stat-label">Consommation moyenne totale</div>
         <div class="stat-value">${consumption !== null ? consumption.toFixed(1) + ' L/100km' : '—'}</div>
       </div>
       <div class="stat-card">
@@ -201,28 +186,10 @@ function expensesByMonth(records) {
 }
 
 function consumptionHistory(fuelRecords) {
-  const sorted = fuelRecords
-    .filter((record) => typeof record.odometer === 'number')
-    .sort((a, b) => a.odometer - b.odometer);
-  const intervals = [];
-  let previousFullIndex = -1;
-  sorted.forEach((record, index) => {
-    if (!record.fullTank) return;
-    if (previousFullIndex !== -1) {
-      const previous = sorted[previousFullIndex];
-      const distance = record.odometer - previous.odometer;
-      const liters = sorted.slice(previousFullIndex + 1, index + 1)
-        .reduce((sum, item) => sum + (item.liters || 0), 0);
-      if (distance > 0 && liters > 0) {
-        intervals.push({
-          label: fmtDate(record.date),
-          value: (liters / distance) * 100,
-        });
-      }
-    }
-    previousFullIndex = index;
-  });
-  return intervals.slice(-6);
+  return fuelConsumptionIntervals(fuelRecords).slice(-6).map((interval) => ({
+    label: fmtDate(interval.record.date),
+    value: interval.consumption,
+  }));
 }
 
 function barChart(title, items, formatValue, emptyText) {
