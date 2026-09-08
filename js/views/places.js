@@ -24,7 +24,7 @@ function loadLeaflet() {
 }
 
 export async function renderPlaces(container) {
-  const places = await DB.getRecordsByType('place');
+  const [places, vehicle] = await Promise.all([DB.getRecordsByType('place'), DB.getVehicle()]);
   const sorted = [...places].sort((a, b) => b.date.localeCompare(a.date));
 
   container.innerHTML = `
@@ -49,7 +49,7 @@ export async function renderPlaces(container) {
 
   const body = document.getElementById('places-body');
   if (activeTab === 'map') {
-    await renderMap(body, sorted, () => renderPlaces(container));
+    await renderMap(body, sorted, vehicle, () => renderPlaces(container));
   } else {
     renderList(body, sorted, () => renderPlaces(container));
   }
@@ -87,9 +87,12 @@ function truncate(s, n) {
   return s.length > n ? s.slice(0, n - 1) + '…' : s;
 }
 
-async function renderMap(body, sorted, onDone) {
+async function renderMap(body, sorted, vehicle, onDone) {
   const located = sorted.filter((r) => typeof r.lat === 'number' && typeof r.lng === 'number');
-  if (!located.length) {
+  const home = vehicle && typeof vehicle.homeLat === 'number' && typeof vehicle.homeLng === 'number'
+    ? { lat: vehicle.homeLat, lng: vehicle.homeLng }
+    : null;
+  if (!located.length && !home) {
     body.innerHTML = '<p class="empty-state">Aucun endroit localisé pour l\'instant.</p>';
     return;
   }
@@ -125,14 +128,31 @@ async function renderMap(body, sorted, onDone) {
     marker.bindPopup(`
       <strong>${escapeHTML(r.name)}</strong><br>
       ${escapeHTML(fmtDate(r.date))}
-      ${r.notes ? `<br>${escapeHTML(truncate(r.notes, 80))}` : ''}
+      ${r.notes ? `<br>${escapeHTML(r.notes)}` : ''}
       <br><a href="#" class="popup-edit" data-id="${escapeHTML(r.id)}">Modifier</a>
     `);
   });
 
-  const bounds = L.latLngBounds(located.map((r) => [r.lat, r.lng]));
+  if (home) {
+    const homeIcon = L.divIcon({
+      className: '',
+      html: `<span class="home-map-marker">${icon('home')}</span>`,
+      iconSize: [40, 40],
+      iconAnchor: [20, 40],
+      popupAnchor: [0, -38],
+    });
+    L.marker([home.lat, home.lng], {
+      icon: homeIcon,
+      title: 'Domicile',
+      alt: 'Domicile',
+    }).addTo(map).bindPopup('<strong>Domicile</strong>');
+  }
+
+  const coordinates = located.map((r) => [r.lat, r.lng]);
+  if (home) coordinates.push([home.lat, home.lng]);
+  const bounds = L.latLngBounds(coordinates);
   map.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
-  if (located.length === 1) map.setZoom(13);
+  if (coordinates.length === 1) map.setZoom(13);
 }
 
 function openForm(existing, onDone) {

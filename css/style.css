@@ -529,6 +529,26 @@ html, body {
   border: 1px solid var(--border);
 }
 
+.home-map-marker {
+  align-items: center;
+  background: var(--accent);
+  border: 3px solid #fff;
+  border-radius: 50% 50% 50% 8px;
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.3);
+  color: #fff;
+  display: flex;
+  height: 40px;
+  justify-content: center;
+  transform: rotate(-45deg);
+  width: 40px;
+}
+
+.home-map-marker .ui-icon {
+  height: 21px;
+  transform: rotate(45deg);
+  width: 21px;
+}
+
 .attach-list {
   display: flex;
   flex-direction: column;

@@ -63,8 +63,8 @@ export async function renderDashboard(container) {
 
     <div class="dashboard-primary">
       <div class="stat-card stat-card-hero">
-        <div class="stat-label">Kilométrage actuel</div>
-        <div class="stat-value">${km(currentOdometer)}</div>
+        <div class="stat-label">Kilométrage actuel (Depuis l’achat)</div>
+        <div class="stat-value">${km(currentOdometer)}${distanceTraveled !== null ? ` (${km(distanceTraveled)})` : ''}</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Coût total en essence</div>
@@ -84,10 +84,6 @@ export async function renderDashboard(container) {
       <div class="stat-card">
         <div class="stat-label">Total investi (Essence)</div>
         <div class="stat-value stat-value-sm">${money(totalInvested)} (${money(totalFuelCost)})</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Distance depuis l'achat</div>
-        <div class="stat-value">${distanceTraveled !== null ? km(distanceTraveled) : '—'}</div>
       </div>
     </div>
 
